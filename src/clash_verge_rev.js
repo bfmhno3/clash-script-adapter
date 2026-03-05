@@ -7,6 +7,11 @@
  * @returns {Object} 返回注入了无泄漏配置的全新 config 对象
  */
 function main(config, profilename) {
+  const proxyNames = (config.proxies || []).map(p => p.name);
+  
+  // 获取已分组的节点
+  const regions = getRegionProxies(proxyNames);
+  
   // 注入全局配置并强制生效
   Object.assign(config, buildGlobalSettings());
 
@@ -293,4 +298,44 @@ function buildGlobalSettings() {
   }
 
   return config;
+}
+
+/**
+ * 根据代理名称分类为不同地区的代理列表
+ * 
+ * 该函数通过正则表达式匹配代理名称中的地区标识（如国旗、地名、机场代码等），
+ * 将输入的代理列表分类为香港、美国、日本、新加坡、台湾、韩国等地区组。
+ * 每个地区返回至少包含一个代理，如果该地区无匹配的代理则返回 ['DIRECT']。
+ *
+ * @param {string[]} proxyNames - 代理名称数组
+ * @returns {Object} 按地区分类的代理对象
+ * @returns {string[]} return.hk - 香港代理列表
+ * @returns {string[]} return.us - 美国代理列表
+ * @returns {string[]} return.jp - 日本代理列表
+ * @returns {string[]} return.sg - 新加坡代理列表
+ * @returns {string[]} return.tw - 台湾代理列表
+ * @returns {string[]} return.kr - 韩国代理列表
+ */
+function getRegionProxies(proxyNames) {
+  // 模仿 Aethersailor 配置模板的定义
+  const hkRegex = /(🇭🇰|港|\bHK(?:[-_ ]?\d+(?:[-_ ]?[A-Za-z]{2,})?)?\b|hk|Hong Kong|HongKong|hongkong|HONG KONG|HONGKONG|深港|HKG|九龙|Kowloon|新界|沙田|荃湾|葵涌)/i;
+  const usRegex = /(🇺🇸|美|波特兰|达拉斯|俄勒冈|凤凰城|费利蒙|硅谷|拉斯维加斯|洛杉矶|圣何塞|圣克拉拉|西雅图|芝加哥|纽约|纽纽|亚特兰大|迈阿密|华盛顿|\bUS(?:[-_ ]?\d+(?:[-_ ]?[A-Za-z]{2,})?)?\b|United States|UnitedStates|UNITED STATES|USA|America|AMERICA|JFK|EWR|IAD|ATL|ORD|MIA|NYC|LAX|SFO|SEA|DFW|SJC)/i;
+  const jpRegex = /(🇯🇵|日本|川日|东京|大阪|泉日|埼玉|沪日|深日|(?<!尼|-)日|\bJP(?:[-_ ]?\d+(?:[-_ ]?[A-Za-z]{2,})?)?\b|Japan|JAPAN|JPN|NRT|HND|KIX|TYO|OSA|关西|Kansai|KANSAI)/i;
+  const sgRegex = /(🇸🇬|新加坡|坡|狮城|\bSG(?:[-_ ]?\d+(?:[-_ ]?[A-Za-z]{2,})?)?\b|Singapore|SINGAPORE|SIN)/i;
+  const twRegex = /(🇹🇼|🇼🇸|台|新北|彰化|\bTW(?:[-_ ]?\d+(?:[-_ ]?[A-Za-z]{2,})?)?\b|Taiwan|TAIWAN|TWN|TPE|ROC)/i;
+  const krRegex = /(🇰🇷|\bKR(?:[-_ ]?\d+(?:[-_ ]?[A-Za-z]{2,})?)?\b|Korea|KOREA|KOR|首尔|韩|韓|春川|Chuncheon|ICN)/i;
+
+  const getProxies = (regex) => {
+    const matched = proxyNames.filter(name => regex.test(name));
+    return matched.length > 0 ? matched : ['DIRECT']; // 防止某些地区无节点导致核心报错
+  };
+
+  return {
+    hk: getProxies(hkRegex),
+    us: getProxies(usRegex),
+    jp: getProxies(jpRegex),
+    sg: getProxies(sgRegex),
+    tw: getProxies(twRegex),
+    kr: getProxies(krRegex)
+  };
 }
