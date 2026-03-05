@@ -18,6 +18,9 @@ function main(config, profilename) {
   // 配置 DNS 服务，防止 DNS 泄露问题
   config.dns = buildDnsConfig();
 
+  // 使用 Aethersailor 模板的规则
+  config['rule-providers'] = buildRuleProviders();
+
   return config;
 }
 
@@ -670,6 +673,119 @@ function buildDnsConfig() {
 
     // #endregion ==============================================================
   };
+
+  return config;
+}
+
+/**
+ * 构建 Clash/Mihomo 的规则提供者配置。
+ * 
+ * 该函数返回一份动态规则集配置方案，允许通过 HTTP 远程下载和自动更新多个规则集，
+ * 包括自定义直连域名、自定义代理域名、Steam CDN、端口分流等规则。
+ * 规则提供者支持按需加载和动态更新，无需编辑主配置文件即可管理规则。
+ *
+ * @returns {Object} 规则提供者配置对象，包含多个规则集的定义
+ * @returns {Object} return.Custom_Direct_Domain - 自定义直连域名规则 (behavior: domain)
+ * @returns {Object} return.Custom_Direct_Classical_IP - 自定义直连 IP 规则 (behavior: classical)
+ * @returns {Object} return.Custom_Proxy_Domain - 自定义代理域名规则 (behavior: domain)
+ * @returns {Object} return.Custom_Proxy_Classical_IP - 自定义代理 IP 规则 (behavior: classical)
+ * @returns {Object} return.Steam_CDN_Classical - Steam CDN 规则 (behavior: classical)
+ * @returns {Object} return.Custom_Port_Direct - 自定义端口直连规则 (behavior: classical)
+ */
+function buildRuleProviders() {
+  // rule-providers 时 mihomo 中一个非常重要的功能，
+  // 它允许你动态管理和更新规则集，而不需要每次修改都编辑主配置文件。
+  // config['rule-providers'] = {
+  //   // name 必须，如 google，不能重复
+  //   google: {
+  //     // 必须，provider 类型，可选 http/file/inline
+  //     type: 'http',
+
+  //     // 可选，文件路径，不可重复，不填写时会使用 url 的 MD5 作为此文件的文件名
+  //     // 由于安全问题，此路径将限制只允许在 HomeDir（由启动参数 -d 配置）中，
+  //     // 如果想存储到其他位置，请通过设置 SAFE_PATHS 环境变量指定额外的安全路径
+  //     // 该环境变量的语法同本操作系统的 PATH 环境变量解析规则（即 Windows 下
+  //     // 分号分割，其他系统下以冒号分割）
+  //     path: './rule1.yaml',
+
+  //     // 类型为 http，则必须配置
+  //     url: 'https://raw.githubusercontent.com/../Google.yaml',
+
+  //     // 更新 provider 的时间，单位为秒
+  //     interval: 600,
+
+  //     // 通过指定代理进行下载/更新
+  //     proxy: 'DIRECT',
+
+  //     // 行为，可选 domain/ipcidr/classical，
+  //     // 对应不同格式的 rule-provider 文件格式，请按实际格式填写
+  //     behavior: 'classical',
+
+  //     // 格式，可选 yaml/text/mrs，默认 yaml/
+  //     // mrs 目前 behavior 仅支持 domain/ipcidr，可以通过
+  //     // mihomo convert-ruleset domain/ipcidr yaml/text XXX.yaml XXX.mrs
+  //     // 转换得到
+  //     format: 'yaml',
+
+  //     // 限制下载文件的最大大小，默认为 0，即不限制文件大小，单位为字节。
+  //     'size-limit': 0,
+
+  //     // 自定义 http 请求头
+  //     header: {
+  //       'User-Agent': [ 'mihomo/1.18.3' ],
+  //       'Authorization': [ 'token 1231231'],
+  //     },
+
+  //     // 内容，仅 type 为 inline 时生效
+  //     payload: [ 'DOMAIN-SUFFIX,google.com' ]
+  //   }
+  // };
+
+  config = {
+    'Custom_Direct_Domain': {
+      type: 'http',
+      behavior: 'domain',
+      url: 'https://testingcf.jsdelivr.net/gh/Aethersailor/Custom_OpenClash_Rules@main/rule/Custom_Direct_Domain.yaml',
+      path: './rulesets/Custom_Direct_Domain.yaml',
+      interval: 28800
+    },
+    'Custom_Direct_Classical_IP': {
+      type: 'http',
+      behavior: 'classical',
+      url: 'https://testingcf.jsdelivr.net/gh/Aethersailor/Custom_OpenClash_Rules@main/rule/Custom_Direct_Classical_IP.yaml',
+      path: './rulesets/Custom_Direct_Classical_IP.yaml',
+      interval: 28800
+    },
+    'Custom_Proxy_Domain': {
+      type: 'http',
+      behavior: 'domain',
+      url: 'https://testingcf.jsdelivr.net/gh/Aethersailor/Custom_OpenClash_Rules@main/rule/Custom_Proxy_Domain.yaml',
+      path: './rulesets/Custom_Proxy_Domain.yaml',
+      interval: 28800
+    },
+    'Custom_Proxy_Classical_IP': {
+      type: 'http',
+      behavior: 'classical',
+      url: 'https://testingcf.jsdelivr.net/gh/Aethersailor/Custom_OpenClash_Rules@main/rule/Custom_Proxy_Classical_IP.yaml',
+      path: './rulesets/Custom_Proxy_Classical_IP.yaml',
+      interval: 28800
+    },
+    'Steam_CDN_Classical': {
+      type: 'http',
+      behavior: 'classical',
+      url: 'https://testingcf.jsdelivr.net/gh/Aethersailor/Custom_OpenClash_Rules@main/rule/Steam_CDN_Classical.yaml',
+      path: './rulesets/Steam_CDN_Classical.yaml',
+      interval: 28800
+    },
+    'Custom_Port_Direct': {
+      type: 'http',
+      behavior: 'classical',
+      url: 'https://testingcf.jsdelivr.net/gh/Aethersailor/Custom_OpenClash_Rules@main/rule/Custom_Port_Direct.yaml',
+      path: './rulesets/Custom_Port_Direct.yaml',
+      interval: 28800
+    }
+  };
+
 
   return config;
 }
