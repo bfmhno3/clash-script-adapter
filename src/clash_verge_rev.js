@@ -24,6 +24,9 @@ function main(config, profilename) {
   // 使用 Aethersailor 模板的规则
   config['rule-providers'] = buildRuleProviders();
 
+  // 添加代理组
+  config['proxy-groups'] = buildProxyGroups(regions, safeProxies);
+
   return config;
 }
 
@@ -789,6 +792,467 @@ function buildRuleProviders() {
     }
   };
 
+
+  return config;
+}
+
+/**
+ * 构建 Clash/Mihomo 的代理组 (Proxy Groups) 配置。
+ * 
+ * 该函数根据预先分类好的地区节点和全局可用节点，生成一组标准化的出站代理策略组。
+ * 默认包含“🚀 手动选择”、“♻️ 自动选择”等基础策略，以及按地区（香港、美国、日本、新加坡、台湾、韩国）
+ * 划分的专属节点组。每个策略组都配置了相应的测试地址、切换容差等参数，用于后续的流量代理和负载策略。
+ *
+ * @param {Object} regions - 按地区分类的代理节点对象集合
+ * @param {string[]} regions.hk - 香港地区代理节点名称数组
+ * @param {string[]} regions.us - 美国地区代理节点名称数组
+ * @param {string[]} regions.jp - 日本地区代理节点名称数组
+ * @param {string[]} regions.sg - 新加坡地区代理节点名称数组
+ * @param {string[]} regions.tw - 台湾地区代理节点名称数组
+ * @param {string[]} regions.kr - 韩国地区代理节点名称数组
+ * @param {string[]} safeProxies - 所有可用的基础/安全代理节点名称数组（通常排除不可用的或特殊节点，兜底为 ['DIRECT']）
+ * @returns {Array<Object>} 生成的代理组配置数组，可直接赋值给 config['proxy-groups']
+ */
+function buildProxyGroups(regions, safeProxies) {
+
+  // const config = [
+  //   {
+
+      // #region ====== name ===================================================
+
+      // 必须,策略组的名字。如有特殊符号，应当使用引号将其包裹
+      // name: 'proxy',
+
+      // #endregion ============================================================
+
+      // #region ====== type ===================================================
+
+      // 必须，策略组的类型
+      // select：手动选择，如果用户没有指定，则默认选择第一个选项。如果第一个是
+      //         策略组，则会选择第一个策略组的第一个选项，直到找到一个非策略组
+      //         的选项（节点）作为初始选项
+      // url-test：自动选择，定时测试 proxies 字段的选项，选择延迟最低的选项作为
+      //           出口
+      // fallback：自动回退，当前节点超时时，则会按代理顺序选择第一个可用节点
+      // load-balance：负载均衡，定时测试 proxies 字段的选项，平均分配连接到这些
+      //               选项上
+      // type: 'select',
+
+      // #endregion ============================================================
+
+      // #region ====== proxies ================================================
+
+      // 引入出站代理或其他策略组，填入代理节点或策略组的名称，mihomo 自动查找
+      // 默认选择第一个代理或策略组作为初始选项
+      // 如果第一个是策略组，则会选择第一个策略组的第一个选项，
+      // 直到找到一个非策略组的选项（节点）作为初始选项
+      // proxies: [ 'DIRECT', 'ss' ],
+
+      // #endregion ============================================================
+
+      // #region ====== use ====================================================
+
+      // 引入代理集合
+      // use: [ 'provider1', 'provider1' ],
+
+      // #endregion ============================================================
+
+      // #region ====== url ====================================================
+
+      // 健康检查测试地址
+      // 只会检查代理组的 proxies 字段的代理，
+      // 不会检查代理集合（proxy-providers）的代理（通过 use 引入的）
+      // url: 'https://www.gstatic.com/generate_204',
+
+      // #endregion ============================================================
+
+      // #region ====== interval ===============================================
+
+      // 健康检查间隔，如不为 0，则启用定时测试，单位为秒
+      // interval: 300,
+
+      // #endregion ============================================================
+
+      // #region ====== tolerance ==============================================
+
+      // 当 type 为 url-test 时有效
+      // 节点切换容差，单位 ms
+      // tolerance: 50,
+
+      // #endregion ============================================================
+
+      // #region ====== lazy ===================================================
+
+      // 懒惰状态，默认为 true，未选择到当前策略组时，不进行测试
+      // lazy: true,
+
+      // #endregion ============================================================
+
+      // #region ====== strategy ===============================================
+
+      // 当 type 为 load-balance 时有效
+      // 负载均衡策略
+      // round-robin：轮询，会把所有的请求分配给策略组内不同的代理节点
+      // consistent-hashing：将相同的目标地址的请求分配给策略组内的同一个代理节点
+      // stricky-sessions：将相同的来源地址和目标地址的请求分配给策略组内的同一
+      //                   个代理节点
+      // 目标地址为域名时，使用顶层域名匹配
+      // strategy: 'consistent-hashing',
+
+      // #endregion ============================================================
+
+      // #region ====== timeout ================================================
+
+      // 健康检查超时时间，单位为毫秒
+      // timeout: 5000,
+
+      // #endregion ============================================================
+
+      // #region ====== max-failed-times =======================================
+
+      // 最大失败次数，超过则触发一次强制健康检查，默认 5
+      // 'max-failed-times': 5,
+
+      // #endregion ============================================================
+
+      // #region ====== disable-udp ============================================
+
+      // 禁用该策略组的 UDP
+      // 'disable-udp': true,
+
+      // #endregion ============================================================
+
+      // #region ====== interface-name =========================================
+
+      // 代理组中的 interface-name 已弃用，请使用代理节点中的 interface-name
+      // 指定策略组的出站接口
+      // 优先级：代理节点 > 代理策略 > 全局
+      // 'interface-name': 'en0',
+
+      // #endregion ============================================================
+
+      // #region ====== routing-mark ===========================================
+
+      // 代理组中的 routing-mark 已弃用，请使用代理节点中的 routing-mark
+      // 策略组出站时附带路由标记
+      // 优先级：代理节点 > 代理策略 > 全局
+      // 'routing-mark': 11451,
+
+      // #endregion ============================================================
+
+      // #region ====== include-all ============================================
+
+      // 引入所有出站代理以及代理集合，顺序将按照名称排序
+      // 引入不包括策略组，可在 proxies 引入其他策略组
+      // 'include-all': false,
+
+      // #endregion ============================================================
+
+      // #region ====== include-all-proxies ====================================
+
+      // 引入所有出站代理，顺序将按照名称排序
+      // 引入不包括策略组，可在 proxies 引入其他策略组
+      // 'include-all-proxies': false,
+
+      // #endregion ============================================================
+
+      // #region ====== include-all-providers ==================================
+
+      // 引入所有代理集合，顺序将按照名称排序
+      // 会使引入代理集合失效
+      // 'include-all-providers': false,
+
+      // #endregion ============================================================
+    
+      // #region ====== filter =================================================
+
+      // 筛选满足关键词或正则表达式的节点，可以使用 ` 区分多个正则表达式
+      // 仅用于引入代理集合以及引入所有出站代理
+      // filter: '(?i)港|hk|hongkong|hong kong',
+
+      // #endregion ============================================================
+
+      // #region ====== exclude-filter =========================================
+
+      // 排序满足关键词或正则表达式的节点，可以使用 ` 区分多个正则表达式
+      // 'exclude-filter': '美|日',
+
+      // #endregion ============================================================
+
+      // #region ====== exclude-type ===========================================
+
+      // 不支持正则表达式，通过 | 分割，根据节点类型排序，仅排序引入出站代理
+      // 支持类型请参阅
+      // https://github.com/MetaCubeX/mihomo/blob/
+      // fbead56ec97ae93f904f4476df1741af718c9c2a/constant/adapters.go#L18-L45
+      // 'exclude-type': 'Shadowsocks|Http',
+
+      // #endregion ============================================================
+
+      // #region ====== hidden =================================================
+
+      // 在 API 返回 hidden 状态，以隐藏该策略组展示（需要使用 API 的前端适配）
+      // hidden: true,
+
+      // #endregion ============================================================
+
+      // #region ====== icon ===================================================
+
+      // 在 API 返回 icon 所输入的字符串，以在该策略组显示
+      //（需要使用 API 的前端适配）
+      // icon: 'xxx'
+
+      // #endregion ============================================================
+
+  //   },
+  // ];
+
+  const { hk, us, jp, sg, tw, kr } = regions;
+
+  const baseGroups = [
+    '🚀 手动选择','♻️ 自动选择','🇭🇰 香港节点','🇺🇸 美国节点','🇯🇵 日本节点',
+    '🇸🇬 新加坡节点','🇼🇸 台湾节点', '🇰🇷 韩国节点'
+  ];
+
+  const config = [
+    {
+      name: '♻️ 自动选择',
+      type: 'url-test',
+      url: 'https://cp.cloudflare.com/generate_204',
+      interval: 300,
+      tolerance: 50,
+      proxies: safeProxies
+    },
+    {
+      name: '🇯🇵 日本节点',
+      type: 'url-test',
+      url: 'https://cp.cloudflare.com/generate_204',
+      interval: 300,
+      tolerance: 50,
+      proxies: jp
+    },
+    {
+      name: '🇺🇸 美国节点',
+      type: 'url-test',
+      url: 'https://cp.cloudflare.com/generate_204',
+      interval: 300,
+      tolerance: 50,
+      proxies: us
+    },
+    {
+      name: '🇭🇰 香港节点',
+      type: 'url-test',
+      url: 'https://cp.cloudflare.com/generate_204',
+      interval: 300,
+      tolerance: 50,
+      proxies: hk
+    },
+    {
+      name:
+      '🇸🇬 新加坡节点',
+      type: 'url-test',
+      url: 'https://cp.cloudflare.com/generate_204',
+      interval: 300,
+      tolerance: 50,
+      proxies: sg
+    },
+    {
+      name: '🇼🇸 台湾节点',
+      type: 'url-test',
+      url: 'https://cp.cloudflare.com/generate_204',
+      interval: 300,
+      tolerance: 50,
+      proxies: tw
+    },
+    {
+      name: '🇰🇷 韩国节点',
+      type: 'url-test',
+      url: 'https://cp.cloudflare.com/generate_204',
+      interval: 300,
+      tolerance: 50,
+      proxies: kr
+    },
+    {
+      name: '🎯 全球直连',
+      type: 'select',
+      proxies: ['DIRECT']
+    },
+    {
+      name: '🚀 手动选择',
+      type: 'select',
+      proxies: [
+        '♻️ 自动选择','🇭🇰 香港节点','🇺🇸 美国节点','🇯🇵 日本节点','🇸🇬 新加坡节点',
+        '🇼🇸 台湾节点','🇰🇷 韩国节点',...safeProxies
+      ]
+    },
+    {
+      name: '💬 即时通讯',
+      type: 'select',
+      proxies: [...baseGroups, '🎯 全球直连']
+    },
+    {
+      name: '🌐 社交媒体',
+      type: 'select',
+      proxies: [...baseGroups, '🎯 全球直连', ...safeProxies]
+    },
+    {
+      name: '🚀 GitHub',
+      type: 'select',
+      proxies: [...baseGroups, '🎯 全球直连']
+    },
+    {
+      name: '🤖 ChatGPT',
+      type: 'select',
+      proxies: [
+        '🚀 手动选择','♻️ 自动选择','🇸🇬 新加坡节点','🇭🇰 香港节点','🇺🇸 美国节点',
+        '🇯🇵 日本节点','🇼🇸 台湾节点','🇰🇷 韩国节点',...safeProxies
+      ]
+    },
+    {
+      name: '🤖 AI服务',
+      type: 'select',
+      proxies: [
+        '🚀 手动选择','♻️ 自动选择','🇸🇬 新加坡节点','🇭🇰 香港节点',
+        '🇺🇸 美国节点', '🇯🇵 日本节点', '🇼🇸 台湾节点', '🇰🇷 韩国节点',...safeProxies
+      ]
+    },
+    {
+      name: '🎶 TikTok',
+      type: 'select',
+      proxies: [...baseGroups, ...safeProxies]
+    },
+    {
+      name: '📹 YouTube',
+      type: 'select',
+      proxies: [
+        '🚀 手动选择','♻️ 自动选择','🇸🇬 新加坡节点','🇭🇰 香港节点','🇺🇸 美国节点',
+        '🇯🇵 日本节点','🇼🇸 台湾节点','🇰🇷 韩国节点', ...safeProxies
+      ]
+    },
+    {
+      name: '🎥 Netflix',
+      type: 'select',
+      proxies: [
+        '🚀 手动选择','♻️ 自动选择','🇸🇬 新加坡节点','🇭🇰 香港节点','🇺🇸 美国节点',
+        '🇯🇵 日本节点','🇼🇸 台湾节点','🇰🇷 韩国节点',...safeProxies
+      ]
+    },
+    {
+      name: '🎥 DisneyPlus',
+      type: 'select',
+      proxies: [
+        '🚀 手动选择','♻️ 自动选择','🇸🇬 新加坡节点','🇭🇰 香港节点','🇺🇸 美国节点',
+        '🇯🇵 日本节点','🇼🇸 台湾节点','🇰🇷 韩国节点',...safeProxies
+      ]
+    },
+    {
+      name: '🎥 HBO',
+      type: 'select',
+      proxies: [
+        '🚀 手动选择','♻️ 自动选择','🇸🇬 新加坡节点','🇭🇰 香港节点','🇺🇸 美国节点',
+        '🇯🇵 日本节点','🇼🇸 台湾节点','🇰🇷 韩国节点',...safeProxies
+      ]
+    },
+    {
+      name: '🎥 PrimeVideo',
+      type: 'select',
+      proxies: [
+        '🚀 手动选择','♻️ 自动选择','🇸🇬 新加坡节点','🇭🇰 香港节点','🇺🇸 美国节点',
+        '🇯🇵 日本节点','🇼🇸 台湾节点','🇰🇷 韩国节点',...safeProxies
+      ]
+    },
+    {
+      name: '🎥 AppleTV+',
+      type: 'select',
+      proxies: [
+        '🚀 手动选择','♻️ 自动选择','🇸🇬 新加坡节点','🇭🇰 香港节点','🇺🇸 美国节点',
+        '🇯🇵 日本节点','🇼🇸 台湾节点','🇰🇷 韩国节点','🎯 全球直连', ...safeProxies
+      ]
+    },
+    {
+      name: '🎥 Emby',
+      type: 'select',
+      proxies: [
+        '🚀 手动选择','♻️ 自动选择','🎯 全球直连','🇭🇰 香港节点','🇺🇸 美国节点',
+        '🇯🇵 日本节点','🇸🇬 新加坡节点','🇼🇸 台湾节点','🇰🇷 韩国节点',...safeProxies
+      ]
+    },
+    {
+      name: '🎻 Spotify',
+      type: 'select',
+      proxies: [
+        '🚀 手动选择','♻️ 自动选择','🎯 全球直连','🇭🇰 香港节点','🇺🇸 美国节点',
+        '🇯🇵 日本节点','🇸🇬 新加坡节点','🇼🇸 台湾节点','🇰🇷 韩国节点',...safeProxies
+      ]
+    },
+    {
+      name: '📺 Bahamut',
+      type: 'select',
+      proxies: ['🇼🇸 台湾节点', '🚀 手动选择', '🎯 全球直连', ...safeProxies]
+    },
+    {
+      name: '🌎 国外媒体',
+      type: 'select',
+      proxies: [...baseGroups, ...safeProxies]
+    },
+    {
+      name: '🛒 国外电商',
+      type: 'select',
+      proxies: [
+        '🚀 手动选择','♻️ 自动选择','🎯 全球直连','🇭🇰 香港节点','🇺🇸 美国节点',
+        '🇯🇵 日本节点','🇸🇬 新加坡节点','🇼🇸 台湾节点','🇰🇷 韩国节点',...safeProxies
+      ]
+    },
+    {
+      name: '📢 谷歌FCM',
+      type: 'select',
+      proxies: baseGroups
+    },
+    {
+      name:
+      '🇬 谷歌服务',
+      type: 'select',
+      proxies: [...baseGroups, ...safeProxies]
+    },
+    {
+      name: '🍎 苹果服务',
+      type: 'select',
+      proxies: ['🎯 全球直连', ...baseGroups, ...safeProxies]
+    },
+    {
+      name: 'Ⓜ️ 微软服务',
+      type: 'select',
+      proxies: ['🎯 全球直连', ...baseGroups, ...safeProxies]
+    },
+    {
+      name: '🎮 游戏平台',
+      type: 'select',
+      proxies: ['🎯 全球直连', ...baseGroups, ...safeProxies] 
+    },
+    {
+      name: '🎮 Steam',
+      type: 'select',
+      proxies: ['🎯 全球直连', ...baseGroups, ...safeProxies]
+    },
+    {
+      name: '🚀 测速工具',
+      type: 'select',
+      proxies: ['🎯 全球直连', ...baseGroups, ...safeProxies]
+    },
+    {
+      name: '🐟 漏网之鱼',
+      type: 'select',
+      proxies: [
+        '🚀 手动选择','♻️ 自动选择','🎯 全球直连','🇭🇰 香港节点','🇺🇸 美国节点',
+        '🇯🇵 日本节点', '🇸🇬 新加坡节点', '🇼🇸 台湾节点', '🇰🇷 韩国节点',...safeProxies
+      ]
+    },
+    {
+      name: '🔀 非标端口',
+      type: 'select',
+      proxies: ['🐟 漏网之鱼', '🎯 全球直连']
+    }
+  ];
 
   return config;
 }
