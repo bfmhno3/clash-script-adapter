@@ -747,7 +747,7 @@ function buildRuleProviders() {
   //   }
   // };
 
-  config = {
+  const config = {
     'Custom_Direct_Domain': {
       type: 'http',
       behavior: 'domain',
