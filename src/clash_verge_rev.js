@@ -27,6 +27,9 @@ function main(config, profilename) {
   // 添加代理组
   config['proxy-groups'] = buildProxyGroups(regions, safeProxies);
 
+  // 添加代理规则
+  config.rules = buildRules();
+
   return config;
 }
 
@@ -1252,6 +1255,68 @@ function buildProxyGroups(regions, safeProxies) {
       type: 'select',
       proxies: ['🐟 漏网之鱼', '🎯 全球直连']
     }
+  ];
+
+  return config;
+}
+
+/**
+ * 构建 Clash/Mihomo 的分流规则 (Routing Rules) 配置。
+ * 
+ * 该函数返回一份完整的分流规则数组，路由引擎会从上到下按严格优先级匹配。
+ * 规则涵盖了本地局域网防泄露、自定义直连与代理规则集、常见应用与网站的 GeoSite/GeoIP 分流
+ * （如：游戏、社交媒体、AI 服务、流媒体、电商等），最终以国内服务直连和兜底规则（漏网之鱼）
+ * 处理未匹配的流量，实现精准且高效的网络分流。
+ *
+ * @returns {string[]} 分流规则配置数组。每条规则遵循 `类型,匹配内容,策略组[,额外参数]` 的格式
+ */
+function buildRules() {
+  const config = [
+    'GEOSITE,private,🎯 全球直连',
+    'GEOIP,private,🎯 全球直连,no-resolve',
+    'RULE-SET,Custom_Direct_Domain,🎯 全球直连',
+    'RULE-SET,Custom_Direct_Classical_IP,🎯 全球直连',
+    'RULE-SET,Custom_Proxy_Domain,🚀 手动选择',
+    'RULE-SET,Custom_Proxy_Classical_IP,🚀 手动选择',
+    'GEOSITE,google-cn,🎯 全球直连',
+    'GEOSITE,category-games@cn,🎯 全球直连',
+    'RULE-SET,Steam_CDN_Classical,🎯 全球直连',
+    'GEOSITE,category-game-platforms-download,🎯 全球直连',
+    'GEOSITE,category-public-tracker,🎯 全球直连',
+    'GEOSITE,category-communication,💬 即时通讯',
+    'GEOSITE,category-social-media-!cn,🌐 社交媒体',
+    'GEOSITE,openai,🤖 ChatGPT',
+    'GEOSITE,category-ai-!cn,🤖 AI服务',
+    'GEOSITE,github,🚀 GitHub',
+    'GEOSITE,category-speedtest,🚀 测速工具',
+    'GEOSITE,steam,🎮 Steam',
+    'GEOSITE,youtube,📹 YouTube',
+    'GEOSITE,apple-tvplus,🎥 AppleTV+',
+    'GEOSITE,apple,🍎 苹果服务',
+    'GEOSITE,microsoft,Ⓜ️ 微软服务',
+    'GEOSITE,googlefcm,📢 谷歌FCM',
+    'GEOSITE,google,🇬 谷歌服务',
+    'GEOSITE,tiktok,🎶 TikTok',
+    'GEOSITE,netflix,🎥 Netflix',
+    'GEOSITE,disney,🎥 DisneyPlus',
+    'GEOSITE,hbo,🎥 HBO',
+    'GEOSITE,primevideo,🎥 PrimeVideo',
+    'GEOSITE,category-emby,🎥 Emby',
+    'GEOSITE,spotify,🎻 Spotify',
+    'GEOSITE,bahamut,📺 Bahamut',
+    'GEOSITE,category-games,🎮 游戏平台',
+    'GEOSITE,category-entertainment,🌎 国外媒体',
+    'GEOSITE,category-ecommerce,🛒 国外电商',
+    'GEOSITE,gfw,🚀 手动选择',
+    'GEOIP,telegram,💬 即时通讯,no-resolve',
+    'GEOIP,twitter,🌐 社交媒体,no-resolve',
+    'GEOIP,facebook,🌐 社交媒体,no-resolve',
+    'GEOIP,google,🇬 谷歌服务,no-resolve',
+    'GEOIP,netflix,🎥 Netflix,no-resolve',
+    'GEOSITE,cn,🎯 全球直连',
+    'GEOIP,cn,🎯 全球直连,no-resolve',
+    'RULE-SET,Custom_Port_Direct,🔀 非标端口',
+    'MATCH,🐟 漏网之鱼'
   ];
 
   return config;
