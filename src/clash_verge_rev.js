@@ -9,8 +9,11 @@
 function main(config, profilename) {
   const proxyNames = (config.proxies || []).map(p => p.name);
   
+  // 当 config 中没有任何代理节点时，添加一个 DIRECT 以防止后续配置报错
+  const safeProxies = proxyNames.length > 0 ? proxyNames : ['DIRECT'];
+  
   // 获取已分组的节点
-  const regions = getRegionProxies(proxyNames);
+  const regions = getRegionProxies(safeProxies);
 
   // 注入全局配置并强制生效
   Object.assign(config, buildGlobalSettings());
