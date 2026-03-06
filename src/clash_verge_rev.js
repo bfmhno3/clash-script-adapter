@@ -33,6 +33,9 @@ function main(config, profilename) {
   // 添加 TUN 配置
   config.tun = buildTunConfig();
 
+  // 添加嗅探器配置
+  config.sniffer = buildSnifferConfig();
+
   return config;
 }
 
@@ -1577,6 +1580,112 @@ function buildTunConfig() {
     // 'exclude-package': [ 'com.android.captiveportallogin' ],
 
     // #endregion ==============================================================
+  };
+
+  return config;
+}
+
+/**
+ * 构建 Clash/Mihomo 的流量嗅探（Sniffer）配置。
+ *
+ * 该函数返回一份用于域名识别与目标重写的嗅探配置模板，包含 HTTP/TLS/QUIC
+ * 协议端口、强制嗅探域名、跳过嗅探域名等规则，用于提升分流命中率并减少
+ * 仅 IP 访问场景下的规则误判。
+ *
+ * @returns {Object} 嗅探配置对象，包含 enable、force-dns-mapping、parse-pure-ip、
+ *                   override-destination、sniff、force-domain、skip-domain 等字段
+ */
+function buildSnifferConfig() {
+  // 摘抄自 OpenClash 相应配置，感谢开发者的服务和付出
+  const config = {
+
+    // #region ====== enable ===================================================
+
+    // 是否启用 sniffer
+    enable: true,
+
+    // #endregion ==============================================================
+    
+    // #region ====== force-dns-mapping ========================================
+    
+    // 对 Redir-Host 类型识别的流量进行强制嗅探
+    'force-dns-mapping': true,
+
+    // #endregion ==============================================================
+
+    // #region ====== parse-pure-ip ============================================
+
+    // 对所有未获取到域名的流量进行强制嗅探
+    'parse-pure-ip': true,
+
+    // #endregion ==============================================================
+
+    // #region ====== override-destination =====================================
+
+    // 是否使用嗅探结果作为实际访问，默认为 true
+    'override-destination': true,
+
+    // #endregion ==============================================================
+
+    // #region ====== sniff ====================================================
+
+    // 需要嗅探的协议设置，仅支持 HTTP/TLS/QUIC
+    sniff: {
+      HTTP: {
+        // ports: 端口范围
+        ports: [ 80, '8080-8880' ],
+
+        // override-destination: 覆盖全局 override-destination 设置
+        'override-destination': true,
+      },
+      TLS: {
+        ports: [ 443, 8443 ],
+      },
+      QUIC: {
+        ports: [ 443 ],
+      }
+    },
+
+    // #endregion ==============================================================
+
+    // #region ====== force-domain =============================================
+
+    // 强制进行嗅探的域名列表，使用域名通配
+    'force-domain': [
+      // '+', // 强制所有域名使用嗅探器
+      '+.netflix.com','+.amazonaws.com','+.media.dssott.com','+.v2ex.com',
+    ],
+
+    // #endregion ==============================================================
+
+    // #region ====== skip-domain ==============================================
+
+    // 跳过嗅探的域名列表，使用域名通配
+    'skip-domain': [
+      'Mijia Cloud',
+      'dlg.io.mi.com',
+      '+.oray.com',
+      '+.sunlogin.net',
+      '+.push.apple.com',
+      // 'geosite:cn',
+    ],
+
+    // #endregion ==============================================================
+
+    // #region ====== skip-src-address =========================================
+
+    // 跳过嗅探的来源 IP 段列表
+    // 'skip-src-address': [ '192.168.0.3/32' ],
+
+    // #endregion ==============================================================
+
+    // #region ====== skip-dst-address =========================================
+
+    // 跳过嗅探的目标 IP 段列表
+    // 'skip-dst-address': [ '192.168.0.1/32' ],
+
+    // #endregion ==============================================================
+
   };
 
   return config;
