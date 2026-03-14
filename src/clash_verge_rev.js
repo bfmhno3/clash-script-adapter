@@ -279,7 +279,7 @@ function buildGlobalSettings() {
     // 可选的加载模式如下：
     // standard：标准加载器
     // memconservative：专为内存受限（小内存）设备优化的加载器（默认值）
-    'geodata-loader': 'memconservative',
+    'geodata-loader': 'standard',
 
     // #endregion ==============================================================
 
@@ -1386,7 +1386,7 @@ function buildTunConfig() {
     // 请使用 VPNHotspot（需要 root）: https://github.com/Mygod/VPNHotspot
     // 在 Linux 中，带有 auto-route 的 auto-redirect 现在可以在路由器上
     // 按预期工作，无需干预
-    'auto-redirect': true,
+    // 'auto-redirect': true,
 
     // #endregion ==============================================================
 
@@ -1409,7 +1409,7 @@ function buildTunConfig() {
     // #region ====== device ===================================================
 
     // 指定 TUN 网卡名称，MacOS 设备只能使用 utun 开头的网卡名
-    device: 'utun0',
+    // device: 'utun0',
 
     // #endregion ==============================================================
 
@@ -1435,14 +1435,14 @@ function buildTunConfig() {
     // #region ====== gso ======================================================
 
     // 启用通用分段写在，仅支持 Linux
-    'gso': true,
+    // 'gso': true,
 
     // #endregion ==============================================================
 
     // #region ====== gso-max-size =============================================
 
     // 数据块的最大长度，仅支持 Linux
-    'gso-max-size': 65536,
+    // 'gso-max-size': 65536,
 
     // #endregion ==============================================================
 
@@ -1488,7 +1488,7 @@ function buildTunConfig() {
     // 将指定规则集中的目标 IP CIDR 规则添加到防火墙，匹配的流量将绕过路由
     // 仅支持 Linux，且需要 nftables 以及 auto-route 和 auto-redirect 已启用
     // 与任意配置中的 routing-mark 冲突
-    'route-exclude-address-set': [ 'ruleset-2' ],
+    // 'route-exclude-address-set': [ 'ruleset-2' ],
 
     // #endregion ==============================================================
 
@@ -1535,7 +1535,7 @@ function buildTunConfig() {
 
     // 包含的用户范围，使其被 TUN 路由流量，未被配置的用户不会被 TUN 路由流量
     // UID 规则仅在 Linux 下被支持，并且需要 auto-route
-    'include-uid-range': [ '1000:9999' ],
+    // 'include-uid-range': [ '1000:9999' ],
 
     // #endregion ==============================================================
 
@@ -1543,7 +1543,7 @@ function buildTunConfig() {
 
     // 排除用户，使其避免被 TUN 路由流量
     // UID 规则仅在 Linux 下被支持，并且需要 auto-route
-    'exclude-uid': [ 1000 ],
+    // 'exclude-uid': [ 1000 ],
 
     // #endregion ==============================================================
 
@@ -1551,7 +1551,7 @@ function buildTunConfig() {
 
     // 排除的用户范围，使其避免被 TUN 路由流量
     // UID 规则仅在 Linux 下被支持，并且需要 auto-route
-    'exclude-uid-range': [ '1000:9999' ],
+    // 'exclude-uid-range': [ '1000:9999' ],
 
     // #endregion ==============================================================
 
