@@ -1,0 +1,35 @@
+name: Build and Release minified script
+
+on:
+  push:
+    tags:
+      - 'v*' # 只有推送以 v 开头的 tag（如 v1.0.0）时才会触发 release
+
+permissions:
+  contents: write # 允许创建 release 和上传资产
+
+jobs:
+  build_and_release:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build Minified Script
+        run: npm run build
+
+      - name: Create Release and Upload Asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: clash_verge_rev.min.js
+          generate_release_notes: true
