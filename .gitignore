@@ -1,3 +1,4 @@
 node_modules/
-clash_verge_rev.min.js
+*.min.js
 .DS_Store
+.claude
