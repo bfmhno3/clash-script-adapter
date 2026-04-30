@@ -1,0 +1,4 @@
+[tools]
+node = "lts"
+"npm:esbuild" = "0.27"
+"npm:terser" = "5.46"
