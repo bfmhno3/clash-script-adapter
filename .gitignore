@@ -1,4 +1,4 @@
 node_modules/
-*.min.js
+dist/
 .DS_Store
 .claude
