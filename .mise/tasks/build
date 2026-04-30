@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ESBUILD_PATH="$(mise where npm:esbuild)/node_modules"
+TERSER_PATH="$(mise where npm:terser)/node_modules"
+
+case "$(uname -s)" in
+  MINGW*|MSYS*|CYGWIN*|Windows_NT)
+    export NODE_PATH="$ESBUILD_PATH;$TERSER_PATH"
+    ;;
+  *)
+    export NODE_PATH="$ESBUILD_PATH:$TERSER_PATH"
+    ;;
+esac
+
+node build.js
