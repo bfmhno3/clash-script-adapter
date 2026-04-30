@@ -80,7 +80,7 @@ function buildAllRegionProxies(features) {
     ...features.regions.extended,
     ...features.regions.special,
   ];
-  return [GROUP.MANUAL, GROUP.AUTO, ...all.map(r => REGION_GROUP_MAP[r])];
+  return [GROUP.AUTO, ...all.map(r => REGION_GROUP_MAP[r])];
 }
 
 function buildRegionGroups(regions, features) {
@@ -171,7 +171,7 @@ export function buildProxyGroups(regions, safeProxies, features) {
       url: 'https://chat.openai.com/cdn-cgi/trace',
       interval: 300,
       'expected-status': 204,
-      proxies: [...allProxies, ...safeProxies],
+      proxies: [GROUP.MANUAL, ...allProxies, ...safeProxies],
     });
     groups.push({
       name: GROUP.AI,
@@ -179,7 +179,7 @@ export function buildProxyGroups(regions, safeProxies, features) {
       url: 'https://chat.openai.com/cdn-cgi/trace',
       interval: 300,
       'expected-status': 204,
-      proxies: [...allProxies, ...safeProxies],
+      proxies: [GROUP.MANUAL, ...allProxies, ...safeProxies],
     });
   }
 
@@ -213,7 +213,7 @@ export function buildProxyGroups(regions, safeProxies, features) {
         strategy: 'consistent-hashing',
         url: 'https://cp.cloudflare.com/generate_204',
         interval: 300,
-        proxies: [...allProxies, ...safeProxies],
+        proxies: [GROUP.MANUAL, ...allProxies, ...safeProxies],
       });
     }
   }
@@ -226,7 +226,7 @@ export function buildProxyGroups(regions, safeProxies, features) {
       strategy: 'consistent-hashing',
       url: 'https://cp.cloudflare.com/generate_204',
       interval: 300,
-      proxies: [...allProxies, GROUP.DIRECT, ...safeProxies],
+      proxies: [GROUP.MANUAL, ...allProxies, GROUP.DIRECT, ...safeProxies],
     });
   }
 
