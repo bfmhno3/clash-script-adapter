@@ -1,13 +1,11 @@
 # Clash Script Adapter
 
-<img src="https://img.shields.io/badge/mihomo-Meta%20CubeX-0A0A0A?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTEyIDJMMyA3djEwbDkgNSA5LTVIN0wxMiAyeiIgZmlsbD0iIzAwZiIvPjwvc3ZnPg==" alt="mihomo"><img src="https://img.shields.io/badge/Clash%20Verge%20Rev-Supported-6366f1?style=for-the-badge&logo=ghost&logoColor=white" alt="Clash Verge Rev">img src="https://img.shields.io/badge/JavaScript-ES2020-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black" alt="JavaScript"><img src="https://img.shields.io/badge/License-MIT-blue?style=for-the-badge" alt="License"><img src="https://img.shields.io/badge/Build-esbuild%20%2B%20Terser-FFCF00?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTIgMTJoMjBNMTIgMnYyME0yIDEyaDIwTDEyIDJsMTAgMTAtMTAgMTB6IiBmaWxsPSJub25lIiBzdHJva2U9IiNGRkNGMDAiIHN0cm9rZS13aWR0aD0iMiIvPjwvc3ZnPg==" alt="Build">
+<img src="https://img.shields.io/badge/mihomo-Meta%20CubeX-0A0A0A?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTEyIDJMMyA3djEwbDkgNSA5LTVIN0wxMiAyeiIgZmlsbD0iIzAwZiIvPjwvc3ZnPg==" alt="mihomo"><img src="https://img.shields.io/badge/Clash%20Verge%20Rev-Supported-6366f1?style=for-the-badge&logo=ghost&logoColor=white" alt="Clash Verge Rev"><img src="https://img.shields.io/badge/JavaScript-ES2020-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black" alt="JavaScript"><img src="https://img.shields.io/badge/License-MIT-blue?style=for-the-badge" alt="License"><img src="https://img.shields.io/badge/Build-esbuild%20%2B%20Terser-FFCF00?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTIgMTJoMjBNMTIgMnYyME0yIDEyaDIwTDEyIDJsMTAgMTAtMTAgMTB6IiBmaWxsPSJub25lIiBzdHJva2U9IiNGRkNGMDAiIHN0cm9rZS13aWR0aD0iMiIvPjwvc3ZnPg==" alt="Build">
 
 <div align="center">
 **一套模块化、可编译的 Clash/Mihomo 脚本配置生成器**
-
 *通过条件编译 Dead Code Elimination，在构建时裁剪不需要的功能*
 *输出三种精简方案，适配从路由器到桌面全场景*
-
 [快速开始](#-快速开始) . [方案对比](#-方案对比) . [架构设计](#%EF%B8%8F-架构设计) . [跨平台](#-跨平台适配) . [构建](#-构建系统)
 
 </div>
