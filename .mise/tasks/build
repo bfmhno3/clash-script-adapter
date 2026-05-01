@@ -1,16 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ESBUILD_PATH="$(mise where npm:esbuild)/node_modules"
-TERSER_PATH="$(mise where npm:terser)/node_modules"
+# 获取 mise 安装包的基础路径
+ESBUILD_PREFIX="$(mise where npm:esbuild)"
+TERSER_PREFIX="$(mise where npm:terser)"
 
 case "$(uname -s)" in
   MINGW*|MSYS*|CYGWIN*|Windows_NT)
-    # Windows 目录结构：prefix/node_modules，环境变量分隔符为分号
+    # Windows 路径结构及分号分隔符
     export NODE_PATH="$ESBUILD_PREFIX/node_modules;$TERSER_PREFIX/node_modules"
     ;;
   *)
-    # Linux/macOS 目录结构：prefix/lib/node_modules，环境变量分隔符为冒号
+    # Linux/macOS 路径结构及冒号分隔符
     export NODE_PATH="$ESBUILD_PREFIX/lib/node_modules:$TERSER_PREFIX/lib/node_modules"
     ;;
 esac
