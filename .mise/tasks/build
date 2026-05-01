@@ -6,10 +6,12 @@ TERSER_PATH="$(mise where npm:terser)/node_modules"
 
 case "$(uname -s)" in
   MINGW*|MSYS*|CYGWIN*|Windows_NT)
-    export NODE_PATH="$ESBUILD_PATH;$TERSER_PATH"
+    # Windows 目录结构：prefix/node_modules，环境变量分隔符为分号
+    export NODE_PATH="$ESBUILD_PREFIX/node_modules;$TERSER_PREFIX/node_modules"
     ;;
   *)
-    export NODE_PATH="$ESBUILD_PATH:$TERSER_PATH"
+    # Linux/macOS 目录结构：prefix/lib/node_modules，环境变量分隔符为冒号
+    export NODE_PATH="$ESBUILD_PREFIX/lib/node_modules:$TERSER_PREFIX/lib/node_modules"
     ;;
 esac
 
