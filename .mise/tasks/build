@@ -16,3 +16,4 @@ case "$(uname -s)" in
 esac
 
 node build.js
+
