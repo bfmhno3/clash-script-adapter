@@ -1,3 +1,7 @@
+/**
+ * 完整方案入口（16 地区，含 TUN + Sniffer）
+ * 构建产物：clash_verge_rev_full.min.js
+ */
 import { features } from '../features/full.js';
 import { detectPlatform } from '../modules/platform.js';
 import { getRegionProxies } from '../modules/regions.js';

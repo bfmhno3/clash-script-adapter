@@ -1,25 +1,29 @@
+/**
+ * 构建全局基础配置，根据平台适配部分参数。
+ * @param {'windows'|'macos'|'linux'|'android'|'unknown'} platform
+ */
 export function buildGlobalSettings(platform) {
   const config = {
     authentication: ['user1:pass1', 'user2:pass2'],
     'skip-auth-prefixes': ['127.0.0.1/8', '::1/28'],
-    mode: 'rule',
+    mode: 'rule',                    // 规则匹配模式（非 global/direct）
     'keep-alive-interval': 15,
     'keep-alive-idle': 60,
-    'disable-keep-alive': platform === 'android' ? true : true,
-    'find-process-mode': platform === 'android' ? 'off' : 'strict',
+    'disable-keep-alive': platform === 'android' ? true : true,  // Android 强制禁用
+    'find-process-mode': platform === 'android' ? 'off' : 'strict',  // Android 关闭进程匹配
     'external-controller-cors': {
       'allow-origins': ['*'],
       'allow-private-network': true,
     },
     secret: '',
     profile: {
-      'store-selected': true,
-      'store-fake-ip': true,
+      'store-selected': true,     // 缓存策略组选择，下次启动沿用
+      'store-fake-ip': true,      // 缓存 fake-ip 映射，域名重连时复用
     },
-    'unified-delay': true,
-    'tcp-concurrent': true,
-    'geodata-mode': true,
-    'geodata-loader': 'standard',
+    'unified-delay': true,        // 统一延迟计算（消除握手差异）
+    'tcp-concurrent': true,       // TCP 并发连接（多 IP 时用最快的）
+    'geodata-mode': true,         // 使用 dat 格式 geoip（非 mmdb）
+    'geodata-loader': 'standard', // 标准加载器（非 memconservative）
     'geo-auto-update': true,
     'geo-update-interval': 24,
     'geo-url': {
@@ -32,7 +36,7 @@ export function buildGlobalSettings(platform) {
     'etag-support': true,
   };
 
-  // routing-mark only meaningful on Linux
+  // routing-mark 仅在 Linux 下有意义（配合 iptables/nftables 策略路由）
   if (platform === 'linux' || platform === 'unknown') {
     config['routing-mark'] = 6666;
   }
@@ -40,6 +44,10 @@ export function buildGlobalSettings(platform) {
   return config;
 }
 
+/**
+ * 构建规则提供者（Rule Providers）配置。
+ * 从 Aethersailor 远程仓库动态加载规则集，支持自动更新（interval 8 小时）。
+ */
 export function buildRuleProviders() {
   return {
     'Custom_Direct_Domain': {

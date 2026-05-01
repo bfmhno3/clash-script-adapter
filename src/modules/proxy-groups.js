@@ -1,4 +1,5 @@
-// Shared group name constants, used by both proxy-groups and rules
+// 共享代理组名称常量，proxy-groups.js 和 rules.js 共同引用
+// 保证组名拼写一致，避免字符串硬编码导致的不匹配
 export const GROUP = {
   AUTO: '♻️ 自动选择',
   MANUAL: '🚀 手动选择',
@@ -54,7 +55,7 @@ export const GROUP = {
   SPEEDTEST: '🚀 测速工具',
 };
 
-// Map region code to group name
+// 地区代码 -> 组名映射，用于 buildAllRegionProxies 展开
 const REGION_GROUP_MAP = {
   hk: GROUP.HK,
   us: GROUP.US,
@@ -74,6 +75,7 @@ const REGION_GROUP_MAP = {
   low: GROUP.LOW,
 };
 
+// 构建全量地区代理组列表：自动选择 + features 中启用的所有地区组
 function buildAllRegionProxies(features) {
   const all = [
     ...features.regions.core,
@@ -83,6 +85,7 @@ function buildAllRegionProxies(features) {
   return [GROUP.AUTO, ...all.map(r => REGION_GROUP_MAP[r])];
 }
 
+// 根据 features.regions 构建地区 url-test 组（自动测速选择最低延迟节点）
 function buildRegionGroups(regions, features) {
   const allRegionKeys = [
     ...features.regions.core,
@@ -100,6 +103,10 @@ function buildRegionGroups(regions, features) {
   }));
 }
 
+/**
+ * 根据 features 配置构建代理组数组。
+ * 始终包含基础组（自动选择、地区组、直连、手动选择），服务组按 features 开关条件添加。
+ */
 export function buildProxyGroups(regions, safeProxies, features) {
   const allProxies = buildAllRegionProxies(features);
   const regionGroups = buildRegionGroups(regions, features);

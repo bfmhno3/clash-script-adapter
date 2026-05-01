@@ -1,3 +1,7 @@
+/**
+ * 轻量方案入口（3 精简地区，无 TUN，无 Sniffer）
+ * 构建产物：clash_verge_rev_lite.min.js
+ */
 import { features } from '../features/lite.js';
 import { detectPlatform } from '../modules/platform.js';
 import { getRegionProxies } from '../modules/regions.js';

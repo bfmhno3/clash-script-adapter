@@ -1,3 +1,6 @@
+// 各地区代理名称匹配正则
+// 匹配规则：国旗 emoji、中文地名、英文地名、IATA 机场代码、节点编号格式（如 HK01、HK-abc）
+// 来源：Aethersailor/Custom_OpenClash_Rules 项目，按机场常见命名习惯整理
 const REGEX = {
   hk: /(🇭🇰|港|\bHK(?:[-_ ]?\d+(?:[-_ ]?[A-Za-z]{2,})?)?\b|hk|Hong Kong|HongKong|hongkong|HONG KONG|HONGKONG|深港|HKG|九龙|Kowloon|新界|沙田|荃湾|葵涌)/i,
   us: /(🇺🇸|美|波特兰|达拉斯|俄勒冈|凤凰城|费利蒙|硅谷|拉斯维加斯|洛杉矶|圣何塞|圣克拉拉|西雅图|芝加哥|纽约|纽纽|亚特兰大|迈阿密|华盛顿|\bUS(?:[-_ ]?\d+(?:[-_ ]?[A-Za-z]{2,})?)?\b|United States|UnitedStates|UNITED STATES|USA|America|AMERICA|JFK|EWR|IAD|ATL|ORD|MIA|NYC|LAX|SFO|SEA|DFW|SJC)/i,
@@ -16,11 +19,13 @@ const REGEX = {
   low: /(低倍率|低倍|(?<![\d\.])0?\.\d+(?![0-9])(?:x|倍)?|倍率[:： ]?0?\.\d+)/i,
 };
 
+// "其他地区"排除正则：动态拼接所有已知地区正则，用于反向匹配不属于任何已知地区的节点
 const OTHER_EXCLUDE = new RegExp(
   Object.values(REGEX).map(r => r.source).join('|'),
   'i'
 );
 
+// 匹配代理名称，无匹配时返回 ['DIRECT'] 防止核心报空组错误
 function getProxies(regex, proxyNames) {
   const matched = proxyNames.filter(name => regex.test(name));
   return matched.length > 0 ? matched : ['DIRECT'];

@@ -1,3 +1,7 @@
+/**
+ * 默认方案入口（6 核心地区，无 TUN）
+ * 构建产物：clash_verge_rev.min.js
+ */
 import { features } from '../features/default.js';
 import { detectPlatform } from '../modules/platform.js';
 import { getRegionProxies } from '../modules/regions.js';
