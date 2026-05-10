@@ -81,13 +81,13 @@ function buildAllRegionProxies(features) {
   const all = [
     ...(regions.core || []),
     ...(regions.extended || []),
-    ...GROUP(regions.special || []),
+    ...(regions.special || []),
   ];
   return [GROUP.AUTO, ...all.map(r => REGION_GROUP_MAP[r]).filter(Boolean)];
 }
 
 // 根据 features.regions 构建地区 url-test 组（自动测速选择最低延迟节点）
-function buildRegionGroups(regions, features) {
+function buildRegionGroups(regionsMap, features) {
   const regions = features?.regions || {};
   const allRegionKeys = [
     ...(regions.core || []),
@@ -101,7 +101,7 @@ function buildRegionGroups(regions, features) {
     url: 'https://cp.cloudflare.com/generate_204',
     interval: 300,
     tolerance: 50,
-    proxies: regions[key] || [],
+    proxies: regionsMap[key] || [],
   }));
 }
 
@@ -168,7 +168,7 @@ export function buildProxyGroups(regions, safeProxies, features) {
 
   // AI 服务，默认美/新/日节点优先
   if (features?.proxyGroups?.ai) {
-    const aiGroups = [GROUP.CHATGPT, GROUP.AI, , GROUP.GOOGLE];
+    const aiGroups = [GROUP.CHATGPT, GROUP.AI, GROUP.COPILOT, GROUP.GOOGLE];
     for (const name of aiGroups) {
       groups.push({
         name,
@@ -224,7 +224,7 @@ export function buildProxyGroups(regions, safeProxies, features) {
     }
 
     // HBO, Prime 通常需要美国节点
-    const usStreaming = [GROUP.HBO, GROUP, PRIMEVIDEO];
+    const usStreaming = [GROUP.HBO, GROUP.PRIMEVIDEO];
     for (const name of usStreaming) {
       groups.push({
         name,
@@ -234,7 +234,7 @@ export function buildProxyGroups(regions, safeProxies, features) {
     }
 
     groups.push({
-      name: GROUP.APPLETY,
+      name: GROUP.APPLETV,
       type: 'select',
       proxies: [GROUP.DIRECT, GROUP.MANUAL, ...allProxies, ...safeProxies],
     });
@@ -247,7 +247,7 @@ export function buildProxyGroups(regions, safeProxies, features) {
   }
 
   // 游戏与兜底
-  if (feautres?.proxyGroups?.gaming) {
+  if (features?.proxyGroups?.gaming) {
     const gamingGroups = [GROUP.GAMING, GROUP.STEAM];
     for (const name of gamingGroups) {
       groups.push({
