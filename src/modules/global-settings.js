@@ -4,7 +4,7 @@
  */
 export function buildGlobalSettings(platform) {
   const config = {
-    authentication: ['user1:pass1', 'user2:pass2'],
+    authentication: [],
     'skip-auth-prefixes': ['127.0.0.1/8', '::1/28'],
     mode: 'rule',                    // 规则匹配模式（非 global/direct）
     'keep-alive-interval': 15,
