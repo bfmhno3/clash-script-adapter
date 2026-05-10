@@ -77,29 +77,31 @@ const REGION_GROUP_MAP = {
 
 // 构建全量地区代理组列表：自动选择 + features 中启用的所有地区组
 function buildAllRegionProxies(features) {
+  const regions = features?.regions || {};
   const all = [
-    ...features.regions.core,
-    ...features.regions.extended,
-    ...features.regions.special,
+    ...(regions.core || []),
+    ...(regions.extended || []),
+    ...GROUP(regions.special || []),
   ];
-  return [GROUP.AUTO, ...all.map(r => REGION_GROUP_MAP[r])];
+  return [GROUP.AUTO, ...all.map(r => REGION_GROUP_MAP[r]).filter(Boolean)];
 }
 
 // 根据 features.regions 构建地区 url-test 组（自动测速选择最低延迟节点）
 function buildRegionGroups(regions, features) {
+  const regions = features?.regions || {};
   const allRegionKeys = [
-    ...features.regions.core,
-    ...features.regions.extended,
-    ...features.regions.special,
+    ...(regions.core || []),
+    ...(regions.extended || []),
+    ...(regions.special || []),
   ];
 
-  return allRegionKeys.map(key => ({
+  return allRegionKeys.filter(Boolean).map(key => ({
     name: REGION_GROUP_MAP[key],
     type: 'url-test',
     url: 'https://cp.cloudflare.com/generate_204',
     interval: 300,
     tolerance: 50,
-    proxies: regions[key],
+    proxies: regions[key] || [],
   }));
 }
 
@@ -134,216 +136,129 @@ export function buildProxyGroups(regions, safeProxies, features) {
     },
   ];
 
-  // IM
-  if (features.proxyGroups.social) {
-    groups.push({
-      name: GROUP.IM,
-      type: 'select',
-      proxies: [GROUP.MANUAL, ...allProxies, ...safeProxies],
-    });
-  }
-
-  // Social media
-  if (features.proxyGroups.social) {
-    groups.push({
-      name: GROUP.SOCIAL,
-      type: 'select',
-      proxies: [GROUP.MANUAL, ...allProxies, ...safeProxies],
-    });
-  }
-
-  // Special groups (Talkatone)
-  if (features.proxyGroups.special) {
-    groups.push({
-      name: GROUP.TALKATONE,
-      type: 'select',
-      proxies: [GROUP.MANUAL, ...allProxies, ...safeProxies],
-    });
-  }
-
-  // GitHub
-  if (features.proxyGroups.social) {
+  // 社交与通讯
+  if (features?.proxyGroups?.social) {
+    const socialGroups = [GROUP.IM, GROUP.SOCIAL, GROUP.TIKTOK, GROUP.MEDIA, GROUP.ECOMMERCE, GROUP.FCM]
+    for (const name of socialGroups) {
+      groups.push({
+        name,
+        type: 'select',
+        proxies: [GROUP.AUTO, GROUP.MANUAL, ...allProxies, ...safeProxies], // 默认 AUTO 体验最好
+      });
+    }
+    
     groups.push({
       name: GROUP.GITHUB,
       type: 'select',
-      proxies: [GROUP.MANUAL, ...allProxies, GROUP.DIRECT, ...safeProxies],
+      proxies: [GROUP.AUTO, GROUP.MANUAL, ...allProxies, ...safeProxies, GROUP.DIRECT],
     });
-  }
 
-  // AI services - use fallback for high availability
-  if (features.proxyGroups.ai) {
     groups.push({
-      name: GROUP.CHATGPT,
-      type: 'fallback',
-      url: 'https://chat.openai.com/cdn-cgi/trace',
-      interval: 300,
-      'expected-status': 204,
-      proxies: [GROUP.MANUAL, ...allProxies, ...safeProxies],
-    });
-    groups.push({
-      name: GROUP.AI,
-      type: 'fallback',
-      url: 'https://chat.openai.com/cdn-cgi/trace',
-      interval: 300,
-      'expected-status': 204,
-      proxies: [GROUP.MANUAL, ...allProxies, ...safeProxies],
-    });
-  }
-
-  if (features.proxyGroups.special) {
-    groups.push({
-      name: GROUP.COPILOT,
+      name: GROUP.APPLE,
       type: 'select',
-      proxies: [GROUP.MANUAL, ...allProxies, ...safeProxies],
+      proxies: [GROUP.DIRECT, GROUP.AUTO, GROUP.MANUAL, ...allProxies, ...safeProxies],
     });
-  }
 
-  // TikTok
-  if (features.proxyGroups.social) {
     groups.push({
-      name: GROUP.TIKTOK,
+      name: GROUP.MICROSOFT,
       type: 'select',
-      proxies: [GROUP.MANUAL, ...allProxies, ...safeProxies],
+      proxies: [GROUP.DIRECT, GROUP.AUTO, GROUP.MANUAL, ...allProxies, ...safeProxies],
     });
   }
 
-  // Streaming - use load-balance for even distribution
-  if (features.proxyGroups.streaming) {
-    const streamingGroups = [
-      GROUP.YOUTUBE, GROUP.NETFLIX, GROUP.DISNEY,
-      GROUP.HBO, GROUP.PRIMEVIDEO,
-    ];
-    for (const name of streamingGroups) {
+  // AI 服务，默认美/新/日节点优先
+  if (features?.proxyGroups?.ai) {
+    const aiGroups = [GROUP.CHATGPT, GROUP.AI, , GROUP.GOOGLE];
+    for (const name of aiGroups) {
       groups.push({
         name,
-        type: 'load-balance',
-        strategy: 'consistent-hashing',
+        type: 'fallback',
         url: 'https://cp.cloudflare.com/generate_204',
         interval: 300,
-        proxies: [GROUP.MANUAL, ...allProxies, ...safeProxies],
+        proxies: [GROUP.US, GROUP.SG, GROUP.JP, GROUP.MANUAL, ...allProxies, ...safeProxies].filter(Boolean),
       });
     }
   }
 
-  // AppleTV+ (includes DIRECT)
-  if (features.proxyGroups.streaming) {
+  // 特殊服务
+  if (features?.proxyGroups?.special) {
     groups.push({
-      name: GROUP.APPLETV,
-      type: 'load-balance',
-      strategy: 'consistent-hashing',
-      url: 'https://cp.cloudflare.com/generate_204',
-      interval: 300,
-      proxies: [GROUP.MANUAL, ...allProxies, GROUP.DIRECT, ...safeProxies],
+      name: GROUP.COPILOT,
+      type: 'select',
+      proxies: [GROUP.US, GROUP.MANUAL, GROUP.AUTO, ...allProxies, ...safeProxies].filter(Boolean),
     });
-  }
 
-  // Emby
-  if (features.proxyGroups.streaming) {
     groups.push({
-      name: GROUP.EMBY,
+      name: GROUP.TALKATONE,
       type: 'select',
-      proxies: [GROUP.MANUAL, GROUP.AUTO, GROUP.DIRECT, ...allProxies, ...safeProxies],
+      proxies: [GROUP.US, GROUP.MANUAL, ...allProxies, ...safeProxies].filter(Boolean),
     });
-  }
 
-  // Spotify
-  if (features.proxyGroups.streaming) {
-    groups.push({
-      name: GROUP.SPOTIFY,
-      type: 'select',
-      proxies: [GROUP.MANUAL, GROUP.AUTO, GROUP.DIRECT, ...allProxies, ...safeProxies],
-    });
-  }
+    const directFirstSpecial = [GROUP.ONEDRIVE, GROUP.PAYPAL];
+    for (const name of directFirstSpecial) {
+      groups.push({
+        name,
+        type: 'select',
+        proxies: [GROUP.DIRECT, GROUP.MANUAL, ...allProxies, ...safeProxies],
+      });
+    }
 
-  // Bahamut (Taiwan only)
-  if (features.proxyGroups.streaming) {
-    groups.push({
-      name: GROUP.BAHAMUT,
-      type: 'select',
-      proxies: [GROUP.TW, GROUP.MANUAL, GROUP.DIRECT],
-    });
-  }
-
-  // Media, Ecommerce
-  if (features.proxyGroups.social) {
-    groups.push({
-      name: GROUP.MEDIA,
-      type: 'select',
-      proxies: [GROUP.MANUAL, ...allProxies, ...safeProxies],
-    });
-    groups.push({
-      name: GROUP.ECOMMERCE,
-      type: 'select',
-      proxies: [GROUP.MANUAL, GROUP.AUTO, ...allProxies, ...safeProxies],
-    });
-  }
-
-  // Google services
-  if (features.proxyGroups.social) {
-    groups.push({
-      name: GROUP.FCM,
-      type: 'select',
-      proxies: [GROUP.MANUAL, ...allProxies, ...safeProxies],
-    });
-    groups.push({
-      name: GROUP.GOOGLE,
-      type: 'select',
-      proxies: [GROUP.MANUAL, ...allProxies, ...safeProxies],
-    });
-  }
-
-  // Apple & Microsoft
-  if (features.proxyGroups.social) {
-    groups.push({
-      name: GROUP.APPLE,
-      type: 'select',
-      proxies: [GROUP.DIRECT, GROUP.MANUAL, ...allProxies, ...safeProxies],
-    });
-    groups.push({
-      name: GROUP.MICROSOFT,
-      type: 'select',
-      proxies: [GROUP.DIRECT, GROUP.MANUAL, ...allProxies, ...safeProxies],
-    });
-  }
-
-  // Special groups (OneDrive, PayPal)
-  if (features.proxyGroups.special) {
-    groups.push({
-      name: GROUP.ONEDRIVE,
-      type: 'select',
-      proxies: [GROUP.DIRECT, GROUP.MANUAL, ...allProxies, ...safeProxies],
-    });
-    groups.push({
-      name: GROUP.PAYPAL,
-      type: 'select',
-      proxies: [GROUP.DIRECT, GROUP.MANUAL, ...allProxies, ...safeProxies],
-    });
-  }
-
-  // Gaming
-  if (features.proxyGroups.gaming) {
-    groups.push({
-      name: GROUP.GAMING,
-      type: 'select',
-      proxies: [GROUP.DIRECT, GROUP.MANUAL, ...allProxies, ...safeProxies],
-    });
-    groups.push({
-      name: GROUP.STEAM,
-      type: 'select',
-      proxies: [GROUP.DIRECT, GROUP.MANUAL, ...allProxies, ...safeProxies],
-    });
-  }
-
-  // PT
-  if (features.proxyGroups.special) {
+    // PT 站点
     groups.push({
       name: GROUP.PT,
       type: 'select',
-      proxies: [...allProxies, GROUP.MANUAL, GROUP.AUTO, GROUP.DIRECT, ...safeProxies],
+      proxies: [GROUP.DIRECT, GROUP.MANUAL, ...allProxies, ...safeProxies],
     });
   }
 
-  // Speed test, catch-all, non-standard port (always present)
+  // 流媒体
+  if (features?.proxyGroups?.streaming) {
+    // 奈飞、迪士尼等首选新加坡或香港
+    const asianStreaming = [GROUP.NETFLIX, GROUP.DISNEY, GROUP.YOUTUBE, GROUP.SPOTIFY, GROUP.EMBY];
+    for (const name of asianStreaming) {
+      groups.push({
+        name,
+        type: 'select',
+        proxies: [GROUP.HK, GROUP.SG, GROUP.TW, GROUP.MANUAL, ...allProxies, ...safeProxies].filter(Boolean),
+      });
+    }
+
+    // HBO, Prime 通常需要美国节点
+    const usStreaming = [GROUP.HBO, GROUP, PRIMEVIDEO];
+    for (const name of usStreaming) {
+      groups.push({
+        name,
+        type: 'select',
+        proxies: [GROUP.US, GROUP.MANUAL, ...allProxies, ...safeProxies].filter(Boolean),
+      });
+    }
+
+    groups.push({
+      name: GROUP.APPLETY,
+      type: 'select',
+      proxies: [GROUP.DIRECT, GROUP.MANUAL, ...allProxies, ...safeProxies],
+    });
+
+    groups.push({
+      name: GROUP.BAHAMUT,
+      type: 'select',
+      proxies: [GROUP.TW, GROUP.DIRECT, GROUP.MANUAL].filter(Boolean), // 动画疯强绑台湾
+    });
+  }
+
+  // 游戏与兜底
+  if (feautres?.proxyGroups?.gaming) {
+    const gamingGroups = [GROUP.GAMING, GROUP.STEAM];
+    for (const name of gamingGroups) {
+      groups.push({
+        name,
+        type: 'select',
+        proxies: [GROUP.HK, GROUP.DIRECT, GROUP.MANUAL, ...allProxies, ...safeProxies].filter(Boolean),
+      });
+    }
+  }
+
+  // 测速、漏网之鱼、非标端口
   groups.push({
     name: GROUP.SPEEDTEST,
     type: 'select',
@@ -352,12 +267,12 @@ export function buildProxyGroups(regions, safeProxies, features) {
   groups.push({
     name: GROUP.CATCH_ALL,
     type: 'select',
-    proxies: [GROUP.DIRECT, GROUP.MANUAL, ...allProxies, ...safeProxies],
+    proxies: [GROUP.DIRECT, GROUP.AUTO, GROUP.MANUAL, ...allProxies, ...safeProxies],
   });
   groups.push({
     name: GROUP.NON_STD,
     type: 'select',
-    proxies: [GROUP.CATCH_ALL, GROUP.DIRECT],
+    proxies: [GROUP.DIRECT, GROUP.CATCH_ALL],
   });
 
   return groups;
