@@ -183,12 +183,6 @@ export function buildProxyGroups(regions, safeProxies, features) {
   // 特殊服务
   if (features?.proxyGroups?.special) {
     groups.push({
-      name: GROUP.COPILOT,
-      type: 'select',
-      proxies: [GROUP.US, GROUP.MANUAL, GROUP.AUTO, ...allProxies, ...safeProxies].filter(Boolean),
-    });
-
-    groups.push({
       name: GROUP.TALKATONE,
       type: 'select',
       proxies: [GROUP.US, GROUP.MANUAL, ...allProxies, ...safeProxies].filter(Boolean),
