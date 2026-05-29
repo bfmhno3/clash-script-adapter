@@ -69,15 +69,30 @@ const SPECIAL_RULES = [
   'RULE-SET,PayPal,' + GROUP.PAYPAL,
 ];
 
-// ====== 进程名规则 ======
-// Android 用包名，桌面用进程名；仅 full 方案启用
-const PROCESS_RULES = [
+// ====== 进程名规则（按平台过滤） ======
+const PROCESS_RULES_ANDROID = [
   'PROCESS-NAME,com.android.captiveportallogin,' + GROUP.DIRECT,
   'PROCESS-NAME,com.android.chrome,' + GROUP.MANUAL,
+];
+
+const PROCESS_RULES_WINDOWS = [
   'PROCESS-NAME,chrome.exe,' + GROUP.MANUAL,
   'PROCESS-NAME,firefox.exe,' + GROUP.MANUAL,
-  'PROCESS-NAME,safari,' + GROUP.MANUAL,
 ];
+
+const PROCESS_RULES_MACOS = [
+  'PROCESS-NAME,Safari,' + GROUP.MANUAL,
+  'PROCESS-NAME,firefox,' + GROUP.MANUAL,
+];
+
+function getProcessRules(platform) {
+  switch (platform) {
+    case 'android': return PROCESS_RULES_ANDROID;
+    case 'windows': return PROCESS_RULES_WINDOWS;
+    case 'macos':   return PROCESS_RULES_MACOS;
+    default:        return [];  // linux/unknown 不添加进程名规则
+  }
+}
 
 // ====== 兜底规则（始终包含） ======
 // 国内直连 + MATCH 兜底；MATCH 必须是最后一条规则
@@ -90,9 +105,10 @@ const TAIL_RULES = [
 /**
  * 根据 features 拼接分流规则数组。规则从上到下按严格优先级匹配。
  * @param {Object} features - 功能开关配置
+ * @param {string} [platform] - 当前平台，用于过滤进程名规则
  * @returns {string[]} 规则数组，每条格式：'类型,匹配内容,策略组[,额外参数]'
  */
-export function buildRules(features) {
+export function buildRules(features, platform) {
   return [
     ...BASIC_RULES,
     ...(features.rules.streaming ? STREAMING_RULES : []),
@@ -100,7 +116,7 @@ export function buildRules(features) {
     ...(features.rules.social ? SOCIAL_RULES : []),
     ...(features.rules.gaming ? GAMING_RULES : []),
     ...(features.rules.special ? SPECIAL_RULES : []),
-    ...(features.rules.process ? PROCESS_RULES : []),
+    ...(features.rules.process ? getProcessRules(platform) : []),
     ...TAIL_RULES,
   ];
 }
