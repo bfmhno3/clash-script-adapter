@@ -47,11 +47,13 @@ export function buildGlobalSettings(platform) {
 /**
  * 构建规则提供者（Rule Providers）配置。
  * 聚合多个远程规则仓库，支持自动更新（interval 8 小时）。
+ * @param {string} [rulesetPath='./rulesets'] - 规则集文件存储路径
  */
-export function buildRuleProviders() {
+export function buildRuleProviders(rulesetPath = './rulesets') {
   const interval = 28800;
   const GH_PROXY = 'https://gh-proxy.com/';
   const gh = url => GH_PROXY + url;
+  const rp = name => `${rulesetPath}/${name}`;
 
   const domain = (url, path) => ({
     type: 'http',
@@ -80,213 +82,213 @@ export function buildRuleProviders() {
   return {
     giveup_direct: classical(
       gh('https://raw.githubusercontent.com/Giveupmoon/Clash_Rules_Yaml/refs/heads/main/Rules/Giveup_Direct.list'),
-      './rulesets/giveup_direct.list'
+      rp('giveup_direct.list')
     ),
     giveup_proxy: classical(
       gh('https://raw.githubusercontent.com/Giveupmoon/Clash_Rules_Yaml/refs/heads/main/Rules/Giveup_Proxy.list'),
-      './rulesets/giveup_proxy.list'
+      rp('giveup_proxy.list')
     ),
 
     private: domain(
       gh('https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/private.mrs'),
-      './rulesets/private.mrs'
+      rp('private.mrs')
     ),
     private_IP: ip(
       gh('https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geoip/private.mrs'),
-      './rulesets/private_IP.mrs'
+      rp('private_IP.mrs')
     ),
 
     Custom_Direct_Domain: domain(
       gh('https://raw.githubusercontent.com/Aethersailor/Custom_OpenClash_Rules/main/rule/Custom_Direct_Domain.mrs'),
-      './rulesets/Custom_Direct_Domain.mrs'
+      rp('Custom_Direct_Domain.mrs')
     ),
     Custom_Direct_IP: ip(
       gh('https://raw.githubusercontent.com/Aethersailor/Custom_OpenClash_Rules/main/rule/Custom_Direct_IP.mrs'),
-      './rulesets/Custom_Direct_IP.mrs'
+      rp('Custom_Direct_IP.mrs')
     ),
     Custom_Proxy_Domain: domain(
       gh('https://raw.githubusercontent.com/Aethersailor/Custom_OpenClash_Rules/main/rule/Custom_Proxy_Domain.mrs'),
-      './rulesets/Custom_Proxy_Domain.mrs'
+      rp('Custom_Proxy_Domain.mrs')
     ),
     Custom_Proxy_IP: ip(
       gh('https://raw.githubusercontent.com/Aethersailor/Custom_OpenClash_Rules/main/rule/Custom_Proxy_IP.mrs'),
-      './rulesets/Custom_Proxy_IP.mrs'
+      rp('Custom_Proxy_IP.mrs')
     ),
 
     'google-cn': domain(
       gh('https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/google-cn.mrs'),
-      './rulesets/google-cn.mrs'
+      rp('google-cn.mrs')
     ),
     'category-games@cn': domain(
       gh('https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/category-games@cn.mrs'),
-      './rulesets/category-games@cn.mrs'
+      rp('category-games@cn.mrs')
     ),
 
     Steam_CDN_Domain: domain(
       gh('https://raw.githubusercontent.com/Aethersailor/Custom_OpenClash_Rules/main/rule/Steam_CDN_Domain.mrs'),
-      './rulesets/Steam_CDN_Domain.mrs'
+      rp('Steam_CDN_Domain.mrs')
     ),
     Steam_CDN_IP: ip(
       gh('https://raw.githubusercontent.com/Aethersailor/Custom_OpenClash_Rules/main/rule/Steam_CDN_IP.mrs'),
-      './rulesets/Steam_CDN_IP.mrs'
+      rp('Steam_CDN_IP.mrs')
     ),
 
     'category-game-platforms-download': domain(
       gh('https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/category-game-platforms-download.mrs'),
-      './rulesets/category-game-platforms-download.mrs'
+      rp('category-game-platforms-download.mrs')
     ),
     'category-public-tracker': domain(
       gh('https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/category-public-tracker.mrs'),
-      './rulesets/category-public-tracker.mrs'
+      rp('category-public-tracker.mrs')
     ),
     'category-communication': domain(
       gh('https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/category-communication.mrs'),
-      './rulesets/category-communication.mrs'
+      rp('category-communication.mrs')
     ),
     'category-social-media': domain(
       gh('https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/category-social-media-!cn.mrs'),
-      './rulesets/category-social-media.mrs'
+      rp('category-social-media.mrs')
     ),
 
     openai: domain(
       gh('https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/openai.mrs'),
-      './rulesets/openai.mrs'
+      rp('openai.mrs')
     ),
     'google-gemini': domain(
       gh('https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/google-gemini.mrs'),
-      './rulesets/google-gemini.mrs'
+      rp('google-gemini.mrs')
     ),
     'category-ai': domain(
       gh('https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/category-ai-!cn.mrs'),
-      './rulesets/category-ai.mrs'
+      rp('category-ai.mrs')
     ),
     github: domain(
       gh('https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/github.mrs'),
-      './rulesets/github.mrs'
+      rp('github.mrs')
     ),
     'category-speedtest': domain(
       gh('https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/category-speedtest.mrs'),
-      './rulesets/category-speedtest.mrs'
+      rp('category-speedtest.mrs')
     ),
     steam: domain(
       gh('https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/steam.mrs'),
-      './rulesets/steam.mrs'
+      rp('steam.mrs')
     ),
 
     youtube: domain(
       gh('https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/youtube.mrs'),
-      './rulesets/youtube.mrs'
+      rp('youtube.mrs')
     ),
     'apple-tvplus': domain(
       gh('https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/apple-tvplus.mrs'),
-      './rulesets/apple-tvplus.mrs'
+      rp('apple-tvplus.mrs')
     ),
     apple: domain(
       gh('https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/apple.mrs'),
-      './rulesets/apple.mrs'
+      rp('apple.mrs')
     ),
     microsoft: domain(
       gh('https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/microsoft.mrs'),
-      './rulesets/microsoft.mrs'
+      rp('microsoft.mrs')
     ),
     google: domain(
       gh('https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/google.mrs'),
-      './rulesets/google.mrs'
+      rp('google.mrs')
     ),
     tiktok: domain(
       gh('https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/tiktok.mrs'),
-      './rulesets/tiktok.mrs'
+      rp('tiktok.mrs')
     ),
     netflix: domain(
       gh('https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/netflix.mrs'),
-      './rulesets/netflix.mrs'
+      rp('netflix.mrs')
     ),
     disney: domain(
       gh('https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/disney.mrs'),
-      './rulesets/disney.mrs'
+      rp('disney.mrs')
     ),
     hbo: domain(
       gh('https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/hbo.mrs'),
-      './rulesets/hbo.mrs'
+      rp('hbo.mrs')
     ),
     primevideo: domain(
       gh('https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/primevideo.mrs'),
-      './rulesets/primevideo.mrs'
+      rp('primevideo.mrs')
     ),
     'category-emby': domain(
       gh('https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/category-emby.mrs'),
-      './rulesets/category-emby.mrs'
+      rp('category-emby.mrs')
     ),
     spotify: domain(
       gh('https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/spotify.mrs'),
-      './rulesets/spotify.mrs'
+      rp('spotify.mrs')
     ),
     bahamut: domain(
       gh('https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/bahamut.mrs'),
-      './rulesets/bahamut.mrs'
+      rp('bahamut.mrs')
     ),
     'category-games': domain(
       gh('https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/category-games.mrs'),
-      './rulesets/category-games.mrs'
+      rp('category-games.mrs')
     ),
     'category-entertainment': domain(
       gh('https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/category-entertainment.mrs'),
-      './rulesets/category-entertainment.mrs'
+      rp('category-entertainment.mrs')
     ),
     gfw: domain(
       gh('https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/gfw.mrs'),
-      './rulesets/gfw.mrs'
+      rp('gfw.mrs')
     ),
 
     telegram: ip(
       gh('https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geoip/telegram.mrs'),
-      './rulesets/telegram.mrs'
+      rp('telegram.mrs')
     ),
     twitter: ip(
       gh('https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geoip/twitter.mrs'),
-      './rulesets/twitter.mrs'
+      rp('twitter.mrs')
     ),
     facebook: ip(
       gh('https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geoip/facebook.mrs'),
-      './rulesets/facebook.mrs'
+      rp('facebook.mrs')
     ),
     'google-ip': ip(
       gh('https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geoip/google.mrs'),
-      './rulesets/google-ip.mrs'
+      rp('google-ip.mrs')
     ),
     'netflix-ip': ip(
       gh('https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geoip/netflix.mrs'),
-      './rulesets/netflix-ip.mrs'
+      rp('netflix-ip.mrs')
     ),
     cn: domain(
       gh('https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/cn.mrs'),
-      './rulesets/cn.mrs'
+      rp('cn.mrs')
     ),
     'cn-ip': ip(
       gh('https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geoip/cn.mrs'),
-      './rulesets/cn-ip.mrs'
+      rp('cn-ip.mrs')
     ),
     PayPal: domain(
       gh('https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/paypal.mrs'),
-      './rulesets/PayPal.mrs'
+      rp('PayPal.mrs')
     ),
 
     // 兼容现有规则命名（避免旧规则立即失效）
     Custom_Direct_Classical_IP: classical(
       gh('https://raw.githubusercontent.com/Aethersailor/Custom_OpenClash_Rules/main/rule/Custom_Direct_IP.yaml'),
-      './rulesets/Custom_Direct_Classical_IP.yaml'
+      rp('Custom_Direct_Classical_IP.yaml')
     ),
     Custom_Proxy_Classical_IP: classical(
       gh('https://raw.githubusercontent.com/Aethersailor/Custom_OpenClash_Rules/main/rule/Custom_Proxy_IP.yaml'),
-      './rulesets/Custom_Proxy_Classical_IP.yaml'
+      rp('Custom_Proxy_Classical_IP.yaml')
     ),
     Steam_CDN_Classical: classical(
       gh('https://raw.githubusercontent.com/Aethersailor/Custom_OpenClash_Rules/main/rule/Steam_CDN_Classical.yaml'),
-      './rulesets/Steam_CDN_Classical.yaml'
+      rp('Steam_CDN_Classical.yaml')
     ),
     Custom_Port_Direct: classical(
       gh('https://raw.githubusercontent.com/Aethersailor/Custom_OpenClash_Rules/main/rule/Custom_Port_Direct.yaml'),
-      './rulesets/Custom_Port_Direct.yaml'
+      rp('Custom_Port_Direct.yaml')
     ),
   };
 }

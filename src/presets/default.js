@@ -11,7 +11,7 @@ import { buildDnsConfig } from '../modules/dns.js';
 import { buildGlobalSettings, buildRuleProviders } from '../modules/global-settings.js';
 import { buildSnifferConfig } from '../modules/network.js';
 
-function main(config, profilename) {
+function main(config, profilename, rulesetPath) {
   const platform = detectPlatform(profilename);
   const proxyNames = (config.proxies || []).map(p => p.name);
   const safeProxies = proxyNames.length > 0 ? proxyNames : ['DIRECT'];
@@ -19,9 +19,9 @@ function main(config, profilename) {
 
   Object.assign(config, buildGlobalSettings(platform));
   config.dns = buildDnsConfig();
-  config['rule-providers'] = buildRuleProviders();
+  config['rule-providers'] = buildRuleProviders(rulesetPath);
   config['proxy-groups'] = buildProxyGroups(regions, safeProxies, features);
-  config.rules = buildRules(features);
+  config.rules = buildRules(features, platform);
   config.sniffer = buildSnifferConfig();
 
   return config;
