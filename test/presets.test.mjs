@@ -70,17 +70,33 @@ describe('preset/full', () => {
     assert.ok(hkGroup.proxies.includes('🇭🇰 HK01'));
   });
 
+  it('logs an info summary during normal generation', () => {
+    const calls = captureConsole(() => {
+      withoutNavigator(() => fullMain(mockConfig(['HK01']), 'linux'));
+    });
+    const infoCall = calls.find(([method, message]) => (
+      method === 'log' &&
+        / INFO clash-script-adapter\.preset\.full config-generated /.test(message)
+    ));
+
+    assert.ok(infoCall);
+    assert.match(infoCall[1], /platform=linux/);
+    assert.match(infoCall[1], /proxyCount=1/);
+  });
+
   it('logs a sanitized warning when falling back to DIRECT', () => {
     const calls = captureConsole(() => {
       withoutNavigator(() => fullMain(mockConfig([]), 'linux'));
     });
+    const warnCall = calls.find(([method, message]) => (
+      method === 'warn' &&
+        / WARN clash-script-adapter\.preset\.full empty-proxies-fallback /.test(message)
+    ));
 
-    assert.equal(calls.length, 1);
-    assert.equal(calls[0][0], 'warn');
-    assert.match(calls[0][1], / WARN clash-script-adapter\.preset\.full empty-proxies-fallback /);
-    assert.match(calls[0][1], /platform=linux/);
-    assert.match(calls[0][1], /proxyCount=0/);
-    assert.doesNotMatch(calls[0][1], /secret|proxies=|DIRECT/);
+    assert.ok(warnCall);
+    assert.match(warnCall[1], /platform=linux/);
+    assert.match(warnCall[1], /proxyCount=0/);
+    assert.doesNotMatch(warnCall[1], /secret|proxies=|DIRECT/);
   });
 });
 
@@ -101,17 +117,33 @@ describe('preset/default', () => {
     assert.equal(config.tun, undefined);
   });
 
+  it('logs an info summary during normal generation', () => {
+    const calls = captureConsole(() => {
+      withoutNavigator(() => defaultMain(mockConfig(['HK01']), 'linux'));
+    });
+    const infoCall = calls.find(([method, message]) => (
+      method === 'log' &&
+        / INFO clash-script-adapter\.preset\.default config-generated /.test(message)
+    ));
+
+    assert.ok(infoCall);
+    assert.match(infoCall[1], /platform=linux/);
+    assert.match(infoCall[1], /proxyCount=1/);
+  });
+
   it('logs a sanitized warning when falling back to DIRECT', () => {
     const calls = captureConsole(() => {
       withoutNavigator(() => defaultMain(mockConfig([]), 'linux'));
     });
+    const warnCall = calls.find(([method, message]) => (
+      method === 'warn' &&
+        / WARN clash-script-adapter\.preset\.default empty-proxies-fallback /.test(message)
+    ));
 
-    assert.equal(calls.length, 1);
-    assert.equal(calls[0][0], 'warn');
-    assert.match(calls[0][1], / WARN clash-script-adapter\.preset\.default empty-proxies-fallback /);
-    assert.match(calls[0][1], /platform=linux/);
-    assert.match(calls[0][1], /proxyCount=0/);
-    assert.doesNotMatch(calls[0][1], /secret|proxies=|DIRECT/);
+    assert.ok(warnCall);
+    assert.match(warnCall[1], /platform=linux/);
+    assert.match(warnCall[1], /proxyCount=0/);
+    assert.doesNotMatch(warnCall[1], /secret|proxies=|DIRECT/);
   });
 });
 

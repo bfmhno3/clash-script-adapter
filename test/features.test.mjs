@@ -6,10 +6,10 @@ import { features as defaultFeatures } from '../src/features/default.js';
 import { features as liteFeatures } from '../src/features/lite.js';
 
 describe('features/full.js', () => {
-  it('enables warning-level runtime logging', () => {
+  it('enables info-level runtime logging', () => {
     assert.deepEqual(fullFeatures.logging, {
       enabled: true,
-      level: 'warn',
+      level: 'info',
     });
   });
 
@@ -47,10 +47,10 @@ describe('features/full.js', () => {
 });
 
 describe('features/default.js', () => {
-  it('enables warning-level runtime logging', () => {
+  it('enables info-level runtime logging', () => {
     assert.deepEqual(defaultFeatures.logging, {
       enabled: true,
-      level: 'warn',
+      level: 'info',
     });
   });
 

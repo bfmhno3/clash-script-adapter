@@ -1,5 +1,5 @@
 export const LOGGING_ENABLED = true;
-export const LOGGING_LEVEL = 'warn';
+export const LOGGING_LEVEL = 'info';
 
 /**
  * 默认方案 features 配置

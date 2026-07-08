@@ -2,7 +2,7 @@
  * 构建 TUN 透明代理配置，根据平台应用差异化参数。
  * @param {'windows'|'macos'|'linux'|'android'|'unknown'} platform
  */
-export function buildTunConfig(platform) {
+export function buildTunConfig(platform, logger = null) {
   const config = {
     enable: true,
     stack: 'mixed',                // TCP 用 system 栈，UDP 用 gvisor 栈（兼容性最佳）
@@ -35,6 +35,18 @@ export function buildTunConfig(platform) {
     config['include-android-user'] = ['0', '10'];
   }
 
+  if (logger) {
+    logger.info('tun-built', {
+      androidUserCount: config['include-android-user'] ? config['include-android-user'].length : 0,
+      autoRedirect: config['auto-redirect'] === true,
+      gso: config['gso'] === true,
+      platform,
+      routeAddressCount: config['route-address'].length,
+      routeExcludeAddressCount: config['route-exclude-address'].length,
+      strictRoute: config['strict-route'],
+    });
+  }
+
   return config;
 }
 
@@ -42,8 +54,8 @@ export function buildTunConfig(platform) {
  * 构建流量嗅探配置。
  * 通过 HTTP/TLS/QUIC 协议识别真实域名，提升仅 IP 访问场景的分流命中率。
  */
-export function buildSnifferConfig() {
-  return {
+export function buildSnifferConfig(logger = null) {
+  const config = {
     enable: true,
     'force-dns-mapping': true,       // 对 Redir-Host 类型流量强制嗅探
     'parse-pure-ip': true,           // 对无域名的流量强制嗅探
@@ -73,4 +85,16 @@ export function buildSnifferConfig() {
       '+.push.apple.com',
     ],
   };
+
+  if (logger) {
+    logger.info('sniffer-built', {
+      forceDomainCount: config['force-domain'].length,
+      forceDnsMapping: config['force-dns-mapping'],
+      parsePureIp: config['parse-pure-ip'],
+      skipDomainCount: config['skip-domain'].length,
+      sniffProtocolCount: Object.keys(config.sniff).length,
+    });
+  }
+
+  return config;
 }

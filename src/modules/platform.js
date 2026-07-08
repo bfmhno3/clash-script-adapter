@@ -6,25 +6,50 @@
  * @param {string} [profilename] - 订阅配置文件名称，可包含平台关键词作为降级提示
  * @returns {'windows'|'macos'|'linux'|'android'|'unknown'}
  */
-export function detectPlatform(profilename) {
+export function detectPlatform(profilename, logger = null) {
   // Clash Verge Rev (Tauri) 环境有 navigator 对象
   if (typeof navigator !== 'undefined') {
     const p = navigator.platform || navigator.userAgent || '';
-    if (/android/i.test(p)) return 'android';
-    if (/win/i.test(p)) return 'windows';
-    if (/mac/i.test(p)) return 'macos';
-    if (/linux/i.test(p)) return 'linux';
+    if (/android/i.test(p)) {
+      if (logger) logger.debug('platform-detected', { platform: 'android', source: 'navigator' });
+      return 'android';
+    }
+    if (/win/i.test(p)) {
+      if (logger) logger.debug('platform-detected', { platform: 'windows', source: 'navigator' });
+      return 'windows';
+    }
+    if (/mac/i.test(p)) {
+      if (logger) logger.debug('platform-detected', { platform: 'macos', source: 'navigator' });
+      return 'macos';
+    }
+    if (/linux/i.test(p)) {
+      if (logger) logger.debug('platform-detected', { platform: 'linux', source: 'navigator' });
+      return 'linux';
+    }
   }
 
   // 降级：从 profilename 推断平台（mihomo 原生环境无 navigator）
   if (profilename) {
     const lower = profilename.toLowerCase();
-    if (/android/.test(lower)) return 'android';
-    if (/win/.test(lower)) return 'windows';
-    if (/mac|darwin/.test(lower)) return 'macos';
-    if (/linux/.test(lower)) return 'linux';
+    if (/android/.test(lower)) {
+      if (logger) logger.debug('platform-detected', { platform: 'android', source: 'profilename' });
+      return 'android';
+    }
+    if (/win/.test(lower)) {
+      if (logger) logger.debug('platform-detected', { platform: 'windows', source: 'profilename' });
+      return 'windows';
+    }
+    if (/mac|darwin/.test(lower)) {
+      if (logger) logger.debug('platform-detected', { platform: 'macos', source: 'profilename' });
+      return 'macos';
+    }
+    if (/linux/.test(lower)) {
+      if (logger) logger.debug('platform-detected', { platform: 'linux', source: 'profilename' });
+      return 'linux';
+    }
   }
 
   // mihomo 原生环境（路由器等），无 navigator，profname 也无平台关键词
+  if (logger) logger.debug('platform-detected', { platform: 'unknown', source: 'fallback' });
   return 'unknown';
 }

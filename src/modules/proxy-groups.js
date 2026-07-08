@@ -115,7 +115,7 @@ function dedupeProxies(proxies) {
  * 根据 features 配置构建代理组数组。
  * 始终包含基础组（自动选择、地区组、直连、手动选择），服务组按 features 开关条件添加。
  */
-export function buildProxyGroups(regions, safeProxies, features) {
+export function buildProxyGroups(regions, safeProxies, features, logger = null) {
   const allProxies = buildAllRegionProxies(features);
   const regionGroups = buildRegionGroups(regions, features);
 
@@ -275,8 +275,28 @@ export function buildProxyGroups(regions, safeProxies, features) {
     proxies: [GROUP.DIRECT, GROUP.CATCH_ALL],
   });
 
-  return groups.map(group => ({
+  const result = groups.map(group => ({
     ...group,
     proxies: dedupeProxies(group.proxies),
   }));
+
+  if (logger) {
+    const dedupedGroupCount = groups.filter((group, index) => (
+      group.proxies.length !== result[index].proxies.length
+    )).length;
+
+    logger.info('proxy-groups-built', {
+      ai: features?.proxyGroups?.ai === true,
+      dedupedGroupCount,
+      gaming: features?.proxyGroups?.gaming === true,
+      groupCount: result.length,
+      regionGroupCount: regionGroups.length,
+      safeProxyCount: safeProxies.length,
+      social: features?.proxyGroups?.social === true,
+      special: features?.proxyGroups?.special === true,
+      streaming: features?.proxyGroups?.streaming === true,
+    });
+  }
+
+  return result;
 }

@@ -31,13 +31,17 @@ function getProxies(regex, proxyNames) {
   return matched.length > 0 ? matched : ['DIRECT'];
 }
 
+function countProxies(regex, proxyNames) {
+  return proxyNames.filter(name => regex.test(name)).length;
+}
+
 /**
  * Classify proxy names into 16 region groups.
  * @param {string[]} proxyNames
  * @returns {Object} Region-keyed proxy lists. Unmatched regions fall back to ['DIRECT'].
  */
-export function getRegionProxies(proxyNames) {
-  return {
+export function getRegionProxies(proxyNames, logger = null) {
+  const regions = {
     hk: getProxies(REGEX.hk, proxyNames),
     us: getProxies(REGEX.us, proxyNames),
     jp: getProxies(REGEX.jp, proxyNames),
@@ -58,4 +62,29 @@ export function getRegionProxies(proxyNames) {
     home: getProxies(REGEX.home, proxyNames),
     low: getProxies(REGEX.low, proxyNames),
   };
+
+  if (logger) {
+    const otherRegex = new RegExp('^(?!.*(' + OTHER_EXCLUDE.source + ')).*', 'i');
+    logger.info('regions-classified', {
+      caCount: countProxies(REGEX.ca, proxyNames),
+      deCount: countProxies(REGEX.de, proxyNames),
+      frCount: countProxies(REGEX.fr, proxyNames),
+      gbCount: countProxies(REGEX.gb, proxyNames),
+      hkCount: countProxies(REGEX.hk, proxyNames),
+      homeCount: countProxies(REGEX.home, proxyNames),
+      inputCount: proxyNames.length,
+      jpCount: countProxies(REGEX.jp, proxyNames),
+      krCount: countProxies(REGEX.kr, proxyNames),
+      lowCount: countProxies(REGEX.low, proxyNames),
+      nlCount: countProxies(REGEX.nl, proxyNames),
+      otherCount: countProxies(otherRegex, proxyNames),
+      ruCount: countProxies(REGEX.ru, proxyNames),
+      sgCount: countProxies(REGEX.sg, proxyNames),
+      trCount: countProxies(REGEX.tr, proxyNames),
+      twCount: countProxies(REGEX.tw, proxyNames),
+      usCount: countProxies(REGEX.us, proxyNames),
+    });
+  }
+
+  return regions;
 }

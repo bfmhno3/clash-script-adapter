@@ -2,8 +2,8 @@
  * 构建 DNS 配置，防止 DNS 泄露。
  * 使用 fake-ip 模式 + 国内外分流 nameserver + fallback-filter 污染防护。
  */
-export function buildDnsConfig() {
-  return {
+export function buildDnsConfig(logger = null) {
+  const config = {
     enable: true,
     'cache-algorithm': 'arc',        // ARC 比 LRU 更适合 DNS 缓存（自适应替换）
     'prefer-h3': false,              // DOH 不强制 HTTP/3（兼容性优先）
@@ -126,4 +126,17 @@ export function buildDnsConfig() {
       ],
     },
   };
+
+  if (logger) {
+    logger.info('dns-built', {
+      directNameserverCount: config['direct-nameserver'].length,
+      enhancedMode: config['enhanced-mode'],
+      fallbackCount: config.fallback.length,
+      fakeIpFilterCount: config['fake-ip-filter'].length,
+      nameserverCount: config.nameserver.length,
+      proxyServerNameserverCount: config['proxy-server-nameserver'].length,
+    });
+  }
+
+  return config;
 }

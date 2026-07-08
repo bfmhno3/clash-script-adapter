@@ -2,7 +2,7 @@
  * 构建全局基础配置，根据平台适配部分参数。
  * @param {'windows'|'macos'|'linux'|'android'|'unknown'} platform
  */
-export function buildGlobalSettings(platform) {
+export function buildGlobalSettings(platform, logger = null) {
   const config = {
     authentication: [],
     'skip-auth-prefixes': ['127.0.0.1/8', '::1/28'],
@@ -41,6 +41,17 @@ export function buildGlobalSettings(platform) {
     config['routing-mark'] = 6666;
   }
 
+  if (logger) {
+    logger.info('global-settings-built', {
+      findProcessMode: config['find-process-mode'],
+      geoAutoUpdate: config['geo-auto-update'],
+      platform,
+      routingMark: Object.prototype.hasOwnProperty.call(config, 'routing-mark'),
+      tcpConcurrent: config['tcp-concurrent'],
+      unifiedDelay: config['unified-delay'],
+    });
+  }
+
   return config;
 }
 
@@ -49,7 +60,7 @@ export function buildGlobalSettings(platform) {
  * 聚合多个远程规则仓库，支持自动更新（interval 8 小时）。
  * @param {string} [rulesetPath='./rulesets'] - 规则集文件存储路径
  */
-export function buildRuleProviders(rulesetPath = './rulesets', rules = null) {
+export function buildRuleProviders(rulesetPath = './rulesets', rules = null, logger = null) {
   const interval = 28800;
   const GITHUB_RAW = 'https://raw.githubusercontent.com/';
   const JSDELIVR_GH = 'https://testingcf.jsdelivr.net/gh/';
@@ -309,13 +320,23 @@ export function buildRuleProviders(rulesetPath = './rulesets', rules = null) {
     ),
   };
 
-  if (!rules) return providers;
-
-  const usedNames = rules
-    .filter(rule => rule.startsWith('RULE-SET,'))
-    .map(rule => rule.split(',')[1]);
-
-  return Object.keys(providers).reduce((result, name) => (
-    usedNames.includes(name) ? { ...result, [name]: providers[name] } : result
+  const usedNames = rules ?
+    rules
+      .filter(rule => rule.startsWith('RULE-SET,'))
+      .map(rule => rule.split(',')[1]) :
+    [];
+  const result = !rules ? providers : Object.keys(providers).reduce((filteredProviders, name) => (
+    usedNames.includes(name) ? { ...filteredProviders, [name]: providers[name] } : filteredProviders
   ), {});
+
+  if (logger) {
+    logger.info('rule-providers-built', {
+      filtered: Boolean(rules),
+      providerCount: Object.keys(result).length,
+      rulesetPathProvided: Boolean(rulesetPath),
+      totalProviderCount: Object.keys(providers).length,
+    });
+  }
+
+  return result;
 }

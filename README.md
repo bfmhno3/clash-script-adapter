@@ -266,8 +266,8 @@ dist/
 | Preset | Enabled | Level |
 |---|:---:|---|
 | `lite` | no | `silent` |
-| `default` | yes | `warn` |
-| `full` | yes | `warn` |
+| `default` | yes | `info` |
+| `full` | yes | `info` |
 
 日志等级从低到高为 `trace`、`debug`、`info`、`warn`、`error`，`silent` 和 `off` 会关闭输出。格式为：
 

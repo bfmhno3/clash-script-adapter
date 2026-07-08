@@ -13,27 +13,27 @@ import { buildTunConfig, buildSnifferConfig } from '../modules/network.js';
 import { createLogger } from '../modules/logger.js';
 
 function main(config, profilename, rulesetPath) {
-  const platform = detectPlatform(profilename);
-  const proxyNames = (config.proxies || []).map(p => p.name);
-  const safeProxies = proxyNames.length > 0 ? proxyNames : ['DIRECT'];
-  const regions = getRegionProxies(safeProxies);
   const logger = LOGGING_ENABLED ?
     createLogger('preset.full', features.logging) :
     null;
+  const platform = detectPlatform(profilename, logger);
+  const proxyNames = (config.proxies || []).map(p => p.name);
+  const safeProxies = proxyNames.length > 0 ? proxyNames : ['DIRECT'];
+  const regions = getRegionProxies(safeProxies, logger);
 
   if (logger && proxyNames.length === 0) {
     logger.warn('empty-proxies-fallback', { platform, proxyCount: proxyNames.length });
   }
 
-  const rules = buildRules(features, platform);
+  const rules = buildRules(features, platform, logger);
 
-  Object.assign(config, buildGlobalSettings(platform));
-  config.dns = buildDnsConfig();
-  config['rule-providers'] = buildRuleProviders(rulesetPath, rules);
-  config['proxy-groups'] = buildProxyGroups(regions, safeProxies, features);
+  Object.assign(config, buildGlobalSettings(platform, logger));
+  config.dns = buildDnsConfig(logger);
+  config['rule-providers'] = buildRuleProviders(rulesetPath, rules, logger);
+  config['proxy-groups'] = buildProxyGroups(regions, safeProxies, features, logger);
   config.rules = rules;
-  config.tun = buildTunConfig(platform);
-  config.sniffer = buildSnifferConfig();
+  config.tun = buildTunConfig(platform, logger);
+  config.sniffer = buildSnifferConfig(logger);
 
   if (logger) {
     logger.info('config-generated', {

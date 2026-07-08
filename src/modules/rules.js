@@ -108,15 +108,32 @@ const TAIL_RULES = [
  * @param {string} [platform] - 当前平台，用于过滤进程名规则
  * @returns {string[]} 规则数组，每条格式：'类型,匹配内容,策略组[,额外参数]'
  */
-export function buildRules(features, platform) {
-  return [
+export function buildRules(features, platform, logger = null) {
+  const processRules = features.rules.process ? getProcessRules(platform) : [];
+  const rules = [
     ...BASIC_RULES,
     ...(features.rules.streaming ? STREAMING_RULES : []),
     ...(features.rules.ai ? AI_RULES : []),
     ...(features.rules.social ? SOCIAL_RULES : []),
     ...(features.rules.gaming ? GAMING_RULES : []),
     ...(features.rules.special ? SPECIAL_RULES : []),
-    ...(features.rules.process ? getProcessRules(platform) : []),
+    ...processRules,
     ...TAIL_RULES,
   ];
+
+  if (logger) {
+    logger.info('rules-built', {
+      ai: features.rules.ai,
+      gaming: features.rules.gaming,
+      platform,
+      process: features.rules.process,
+      processRuleCount: processRules.length,
+      ruleCount: rules.length,
+      social: features.rules.social,
+      special: features.rules.special,
+      streaming: features.rules.streaming,
+    });
+  }
+
+  return rules;
 }
