@@ -24,7 +24,6 @@
   |-- package.json          # npm scripts and dependencies
   |-- mise.toml             # Toolchain task configuration
   `-- README.md             # Project documentation
-  
   ```
 
   ## Runtime Environment & API Support
@@ -54,7 +53,7 @@
   - `mise install`
   - `mise use node@lts`
   - `mise current`
-  - `mise exec -- node --version`
+  - `mise exec node@lts --command "node --version"`
   - `node --version`
 
   ### Development Pipeline
