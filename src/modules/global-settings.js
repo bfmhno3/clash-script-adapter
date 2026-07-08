@@ -49,15 +49,29 @@ export function buildGlobalSettings(platform) {
  * 聚合多个远程规则仓库，支持自动更新（interval 8 小时）。
  * @param {string} [rulesetPath='./rulesets'] - 规则集文件存储路径
  */
-export function buildRuleProviders(rulesetPath = './rulesets') {
+export function buildRuleProviders(rulesetPath = './rulesets', rules = null) {
   const interval = 28800;
-  const GH_PROXY = 'https://gh-proxy.com/';
-  const gh = url => GH_PROXY + url;
+  const GITHUB_RAW = 'https://raw.githubusercontent.com/';
+  const JSDELIVR_GH = 'https://testingcf.jsdelivr.net/gh/';
+  const gh = url => {
+    if (!url.startsWith(GITHUB_RAW)) return url;
+
+    const parts = url.slice(GITHUB_RAW.length).split('/');
+    const owner = parts[0];
+    const repo = parts[1];
+    const branch = parts[2] === 'refs' && parts[3] === 'heads' ?
+      parts[4] :
+      parts[2];
+    const pathIndex = parts[2] === 'refs' && parts[3] === 'heads' ? 5 : 3;
+    const filePath = parts.slice(pathIndex).join('/');
+    return `${JSDELIVR_GH}${owner}/${repo}@${branch}/${filePath}`;
+  };
   const rp = name => `${rulesetPath}/${name}`;
 
   const domain = (url, path) => ({
     type: 'http',
     behavior: 'domain',
+    format: 'mrs',
     url,
     path,
     interval,
@@ -66,20 +80,23 @@ export function buildRuleProviders(rulesetPath = './rulesets') {
   const ip = (url, path) => ({
     type: 'http',
     behavior: 'ipcidr',
+    format: 'mrs',
     url,
     path,
     interval,
   });
 
+  const getClassicalFormat = path => path.endsWith('.list') ? 'text' : 'yaml';
   const classical = (url, path) => ({
     type: 'http',
     behavior: 'classical',
+    format: getClassicalFormat(path),
     url,
     path,
     interval,
   });
 
-  return {
+  const providers = {
     giveup_direct: classical(
       gh('https://raw.githubusercontent.com/Giveupmoon/Clash_Rules_Yaml/refs/heads/main/Rules/Giveup_Direct.list'),
       rp('giveup_direct.list')
@@ -291,4 +308,14 @@ export function buildRuleProviders(rulesetPath = './rulesets') {
       rp('Custom_Port_Direct.yaml')
     ),
   };
+
+  if (!rules) return providers;
+
+  const usedNames = rules
+    .filter(rule => rule.startsWith('RULE-SET,'))
+    .map(rule => rule.split(',')[1]);
+
+  return Object.keys(providers).reduce((result, name) => (
+    usedNames.includes(name) ? { ...result, [name]: providers[name] } : result
+  ), {});
 }

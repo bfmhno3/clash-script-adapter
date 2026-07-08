@@ -25,11 +25,13 @@ function main(config, profilename, rulesetPath) {
     logger.warn('empty-proxies-fallback', { platform, proxyCount: proxyNames.length });
   }
 
+  const rules = buildRules(features, platform);
+
   Object.assign(config, buildGlobalSettings(platform));
   config.dns = buildDnsConfig();
-  config['rule-providers'] = buildRuleProviders(rulesetPath);
+  config['rule-providers'] = buildRuleProviders(rulesetPath, rules);
   config['proxy-groups'] = buildProxyGroups(regions, safeProxies, features);
-  config.rules = buildRules(features, platform);
+  config.rules = rules;
   config.tun = buildTunConfig(platform);
   config.sniffer = buildSnifferConfig();
 

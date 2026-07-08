@@ -2,6 +2,14 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { buildGlobalSettings, buildRuleProviders } from '../src/modules/global-settings.js';
+import { main as fullMain } from '../src/presets/full.js';
+
+function getRuleSetProviderNames(rules) {
+  return rules
+    .filter(rule => rule.startsWith('RULE-SET,'))
+    .map(rule => rule.split(',')[1])
+    .sort();
+}
 
 describe('buildGlobalSettings', () => {
   it('returns base config for all platforms', () => {
@@ -65,19 +73,41 @@ describe('buildRuleProviders', () => {
     for (const [name, provider] of Object.entries(providers)) {
       assert.ok(provider.type, `${name}: type`);
       assert.ok(provider.behavior, `${name}: behavior`);
+      assert.ok(provider.format, `${name}: format`);
       assert.ok(provider.url, `${name}: url`);
       assert.ok(provider.path, `${name}: path`);
       assert.equal(provider.interval, 28800, `${name}: interval`);
     }
   });
 
-  it('all GitHub URLs use gh-proxy', () => {
+  it('provider URLs avoid gh-proxy rate limiting', () => {
     const providers = buildRuleProviders();
     for (const [name, provider] of Object.entries(providers)) {
       assert.ok(
-        provider.url.startsWith('https://gh-proxy.com/'),
-        `${name}: URL should use gh-proxy, got ${provider.url}`
+        !provider.url.startsWith('https://gh-proxy.com/'),
+        `${name}: URL should not use gh-proxy, got ${provider.url}`
       );
+    }
+  });
+
+  it('mrs providers explicitly declare mrs format', () => {
+    const providers = buildRuleProviders();
+    for (const [name, provider] of Object.entries(providers)) {
+      if (provider.path.endsWith('.mrs')) {
+        assert.equal(provider.format, 'mrs', `${name}: format`);
+      }
+    }
+  });
+
+  it('text and yaml providers explicitly declare their formats', () => {
+    const providers = buildRuleProviders();
+    for (const [name, provider] of Object.entries(providers)) {
+      if (provider.path.endsWith('.list')) {
+        assert.equal(provider.format, 'text', `${name}: format`);
+      }
+      if (provider.path.endsWith('.yaml')) {
+        assert.equal(provider.format, 'yaml', `${name}: format`);
+      }
     }
   });
 
@@ -95,5 +125,29 @@ describe('buildRuleProviders', () => {
         );
       }
     }
+  });
+
+  it('full preset only includes providers referenced by RULE-SET rules', () => {
+    const config = fullMain({ proxies: [{ name: 'HK01' }] }, 'windows');
+    const providerNames = Object.keys(config['rule-providers']).sort();
+    const ruleSetNames = getRuleSetProviderNames(config.rules);
+
+    assert.deepEqual(providerNames, ruleSetNames);
+  });
+
+  it('full preset uses GEOSITE for bundled geosite rules', () => {
+    const config = fullMain({ proxies: [{ name: 'HK01' }] }, 'windows');
+    const providers = config['rule-providers'];
+
+    assert.ok(config.rules.includes('GEOSITE,category-games,🎮 游戏平台'));
+    assert.ok(config.rules.includes('GEOSITE,primevideo,🎥 PrimeVideo'));
+    assert.equal(providers['category-games'], undefined);
+    assert.equal(providers.primevideo, undefined);
+    assert.equal(providers['category-social-media'], undefined);
+  });
+
+  it('Steam CDN mrs provider declares mrs format', () => {
+    const config = fullMain({ proxies: [{ name: 'HK01' }] }, 'windows');
+    assert.equal(config['rule-providers'].Steam_CDN_Domain.format, 'mrs');
   });
 });

@@ -3,7 +3,7 @@ import { GROUP } from './proxy-groups.js';
 // ====== 基础规则（始终包含） ======
 // 私有网络直连 + Giveup/自定义规则集 + 国内可直连服务
 const BASIC_RULES = [
-  'RULE-SET,private,' + GROUP.DIRECT,
+  'GEOSITE,private,' + GROUP.DIRECT,
   'RULE-SET,private_IP,' + GROUP.DIRECT + ',no-resolve',
   'RULE-SET,giveup_direct,' + GROUP.DIRECT,
   'RULE-SET,giveup_proxy,' + GROUP.MANUAL,
@@ -11,46 +11,46 @@ const BASIC_RULES = [
   'RULE-SET,Custom_Direct_IP,' + GROUP.DIRECT + ',no-resolve',
   'RULE-SET,Custom_Proxy_Domain,' + GROUP.MANUAL,
   'RULE-SET,Custom_Proxy_IP,' + GROUP.MANUAL + ',no-resolve',
-  'RULE-SET,google-cn,' + GROUP.DIRECT,
-  'RULE-SET,category-games@cn,' + GROUP.DIRECT,
+  'GEOSITE,google-cn,' + GROUP.DIRECT,
+  'GEOSITE,category-games@cn,' + GROUP.DIRECT,
   'RULE-SET,Steam_CDN_Domain,' + GROUP.DIRECT,
   'RULE-SET,Steam_CDN_IP,' + GROUP.DIRECT + ',no-resolve',
-  'RULE-SET,category-game-platforms-download,' + GROUP.DIRECT,
-  'RULE-SET,category-public-tracker,' + GROUP.DIRECT,
+  'GEOSITE,category-game-platforms-download,' + GROUP.DIRECT,
+  'GEOSITE,category-public-tracker,' + GROUP.DIRECT,
 ];
 
 // ====== 流媒体规则 ======
 const STREAMING_RULES = [
-  'RULE-SET,youtube,' + GROUP.YOUTUBE,
-  'RULE-SET,apple-tvplus,' + GROUP.APPLETV,
-  'RULE-SET,netflix,' + GROUP.NETFLIX,
-  'RULE-SET,disney,' + GROUP.DISNEY,
-  'RULE-SET,hbo,' + GROUP.HBO,
-  'RULE-SET,primevideo,' + GROUP.PRIMEVIDEO,
-  'RULE-SET,category-emby,' + GROUP.EMBY,
-  'RULE-SET,spotify,' + GROUP.SPOTIFY,
-  'RULE-SET,bahamut,' + GROUP.BAHAMUT,
+  'GEOSITE,youtube,' + GROUP.YOUTUBE,
+  'GEOSITE,apple-tvplus,' + GROUP.APPLETV,
+  'GEOSITE,netflix,' + GROUP.NETFLIX,
+  'GEOSITE,disney,' + GROUP.DISNEY,
+  'GEOSITE,hbo,' + GROUP.HBO,
+  'GEOSITE,primevideo,' + GROUP.PRIMEVIDEO,
+  'GEOSITE,category-emby,' + GROUP.EMBY,
+  'GEOSITE,spotify,' + GROUP.SPOTIFY,
+  'GEOSITE,bahamut,' + GROUP.BAHAMUT,
 ];
 
 // ====== AI 服务规则 ======
 const AI_RULES = [
-  'RULE-SET,openai,' + GROUP.CHATGPT,
-  'RULE-SET,google-gemini,' + GROUP.AI,
-  'RULE-SET,category-ai,' + GROUP.AI,
+  'GEOSITE,openai,' + GROUP.CHATGPT,
+  'GEOSITE,google-gemini,' + GROUP.AI,
+  'GEOSITE,category-ai-!cn,' + GROUP.AI,
 ];
 
 // ====== 社交/通讯/通用服务规则 ======
 const SOCIAL_RULES = [
-  'RULE-SET,category-communication,' + GROUP.IM,
-  'RULE-SET,category-social-media,' + GROUP.SOCIAL,
-  'RULE-SET,github,' + GROUP.GITHUB,
-  'RULE-SET,category-speedtest,' + GROUP.SPEEDTEST,
-  'RULE-SET,apple,' + GROUP.APPLE,
-  'RULE-SET,microsoft,' + GROUP.MICROSOFT,
-  'RULE-SET,google,' + GROUP.GOOGLE,
-  'RULE-SET,tiktok,' + GROUP.TIKTOK,
-  'RULE-SET,category-entertainment,' + GROUP.MEDIA,
-  'RULE-SET,gfw,' + GROUP.MANUAL,
+  'GEOSITE,category-communication,' + GROUP.IM,
+  'GEOSITE,category-social-media-!cn,' + GROUP.SOCIAL,
+  'GEOSITE,github,' + GROUP.GITHUB,
+  'GEOSITE,category-speedtest,' + GROUP.SPEEDTEST,
+  'GEOSITE,apple,' + GROUP.APPLE,
+  'GEOSITE,microsoft,' + GROUP.MICROSOFT,
+  'GEOSITE,google,' + GROUP.GOOGLE,
+  'GEOSITE,tiktok,' + GROUP.TIKTOK,
+  'GEOSITE,category-entertainment,' + GROUP.MEDIA,
+  'GEOSITE,gfw,' + GROUP.MANUAL,
   'RULE-SET,telegram,' + GROUP.IM + ',no-resolve',
   'RULE-SET,twitter,' + GROUP.SOCIAL + ',no-resolve',
   'RULE-SET,facebook,' + GROUP.SOCIAL + ',no-resolve',
@@ -60,13 +60,13 @@ const SOCIAL_RULES = [
 
 // ====== 游戏规则 ======
 const GAMING_RULES = [
-  'RULE-SET,steam,' + GROUP.STEAM,
-  'RULE-SET,category-games,' + GROUP.GAMING,
+  'GEOSITE,steam,' + GROUP.STEAM,
+  'GEOSITE,category-games,' + GROUP.GAMING,
 ];
 
 // ====== 特殊服务规则（PayPal） ======
 const SPECIAL_RULES = [
-  'RULE-SET,PayPal,' + GROUP.PAYPAL,
+  'GEOSITE,paypal,' + GROUP.PAYPAL,
 ];
 
 // ====== 进程名规则（按平台过滤） ======
@@ -97,7 +97,7 @@ function getProcessRules(platform) {
 // ====== 兜底规则（始终包含） ======
 // 国内直连 + MATCH 兜底；MATCH 必须是最后一条规则
 const TAIL_RULES = [
-  'RULE-SET,cn,' + GROUP.DIRECT,
+  'GEOSITE,cn,' + GROUP.DIRECT,
   'RULE-SET,cn-ip,' + GROUP.DIRECT + ',no-resolve',
   'MATCH,' + GROUP.CATCH_ALL,
 ];
