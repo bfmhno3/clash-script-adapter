@@ -259,6 +259,31 @@ dist/
 
 将 `.min.js` 的内容复制粘贴到 Clash Verge Rev 等软件的 “全局扩展脚本” 中即可。
 
+### 运行时日志
+
+脚本内置 BOA-safe 单行日志系统，不依赖 Node.js、浏览器网络 API 或文件 API。默认策略：
+
+| Preset | Enabled | Level |
+|---|:---:|---|
+| `lite` | no | `silent` |
+| `default` | yes | `warn` |
+| `full` | yes | `warn` |
+
+日志等级从低到高为 `trace`、`debug`、`info`、`warn`、`error`，`silent` 和 `off` 会关闭输出。格式为：
+
+```text
+2026-01-02T03:04:05.006Z WARN clash-script-adapter.preset.default empty-proxies-fallback platform=linux proxyCount=0
+```
+
+如需调整日志行为，修改对应 `src/features/*.js` 顶部的静态开关：
+
+```js
+export const LOGGING_ENABLED = true;
+export const LOGGING_LEVEL = 'info';
+```
+
+日志只记录平台、数量和功能摘要等排障信息，不输出节点名称、`secret` 或完整配置对象。
+
 ---
 
 ## 依赖关系
