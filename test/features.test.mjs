@@ -37,13 +37,12 @@ describe('features/full.js', () => {
     assert.equal(fullFeatures.proxyGroups.pruneEmptyRegions, true);
   });
 
-  it('enables all rule switches including process', () => {
+  it('enables all rule switches', () => {
     assert.equal(fullFeatures.rules.streaming, true);
     assert.equal(fullFeatures.rules.ai, true);
     assert.equal(fullFeatures.rules.social, true);
     assert.equal(fullFeatures.rules.gaming, true);
     assert.equal(fullFeatures.rules.special, true);
-    assert.equal(fullFeatures.rules.process, true);
   });
 });
 
@@ -76,9 +75,8 @@ describe('features/default.js', () => {
     assert.equal(defaultFeatures.proxyGroups.pruneEmptyRegions, false);
   });
 
-  it('disables special and process rules', () => {
+  it('disables special rules', () => {
     assert.equal(defaultFeatures.rules.special, false);
-    assert.equal(defaultFeatures.rules.process, false);
   });
 });
 
@@ -118,7 +116,6 @@ describe('features/lite.js', () => {
     assert.equal(liteFeatures.rules.social, false);
     assert.equal(liteFeatures.rules.gaming, false);
     assert.equal(liteFeatures.rules.special, false);
-    assert.equal(liteFeatures.rules.process, false);
   });
 });
 

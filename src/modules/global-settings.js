@@ -10,7 +10,7 @@ export function buildGlobalSettings(platform, logger = null) {
     'keep-alive-interval': 15,
     'keep-alive-idle': 60,
     'disable-keep-alive': platform === 'android' ? true : true,  // Android 强制禁用
-    'find-process-mode': platform === 'android' ? 'off' : 'strict',  // Android 关闭进程匹配
+    'find-process-mode': platform === 'android' ? 'off' : 'strict',
     'external-controller-cors': {
       'allow-origins': ['*'],
       'allow-private-network': true,

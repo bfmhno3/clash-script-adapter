@@ -1,36 +1,35 @@
-// 共享代理组名称常量，proxy-groups.js 和 rules.js 共同引用
-// 保证组名拼写一致，避免字符串硬编码导致的不匹配
+// Shared group names used by proxy-groups.js and rules.js.
 export const GROUP = {
-  AUTO: '♻️ 自动选择',
-  MANUAL: '🚀 手动选择',
-  DIRECT: '🎯 全球直连',
-  CATCH_ALL: '🐟 漏网之鱼',
-  NON_STD: '🔀 非标端口',
+  AUTO: '♻️ Auto Select',
+  MANUAL: '🚀 Manual Select',
+  DIRECT: '🎯 Direct',
+  CATCH_ALL: '🐟 Final',
+  NON_STD: '🔀 Non-Standard Ports',
   // Regional groups
-  HK: '🇭🇰 香港节点',
-  US: '🇺🇸 美国节点',
-  JP: '🇯🇵 日本节点',
-  SG: '🇸🇬 新加坡节点',
-  TW: '🇼🇸 台湾节点',
-  KR: '🇰🇷 韩国节点',
-  CA: '🇨🇦 加拿大节点',
-  GB: '🇬🇧 英国节点',
-  FR: '🇫🇷 法国节点',
-  DE: '🇩🇪 德国节点',
-  NL: '🇳🇱 荷兰节点',
-  TR: '🇹🇷 土耳其节点',
-  RU: '🇷🇺 俄罗斯节点',
-  OTHER: '🌐 其他地区',
-  HOME: '🏠 家宽节点',
-  LOW: '🐢 低倍率节点',
+  HK: '🇭🇰 Hong Kong',
+  US: '🇺🇸 United States',
+  JP: '🇯🇵 Japan',
+  SG: '🇸🇬 Singapore',
+  TW: '🇼🇸 Taiwan',
+  KR: '🇰🇷 South Korea',
+  CA: '🇨🇦 Canada',
+  GB: '🇬🇧 United Kingdom',
+  FR: '🇫🇷 France',
+  DE: '🇩🇪 Germany',
+  NL: '🇳🇱 Netherlands',
+  TR: '🇹🇷 Turkey',
+  RU: '🇷🇺 Russia',
+  OTHER: '🌐 Other Regions',
+  HOME: '🏠 Residential',
+  LOW: '🐢 Low Rate',
   // Service groups
-  IM: '💬 即时通讯',
-  SOCIAL: '🌐 社交媒体',
+  IM: '💬 Instant Messaging',
+  SOCIAL: '🌐 Social Media',
   TALKATONE: '📞 Talkatone',
   GITHUB: '🚀 GitHub',
   CHATGPT: '🤖 ChatGPT',
   COPILOT: '🤖 Copilot',
-  AI: '🤖 AI服务',
+  AI: '🤖 AI Services',
   TIKTOK: '🎶 TikTok',
   YOUTUBE: '📹 YouTube',
   NETFLIX: '🎥 Netflix',
@@ -41,21 +40,21 @@ export const GROUP = {
   EMBY: '🎥 Emby',
   SPOTIFY: '🎻 Spotify',
   BAHAMUT: '📺 Bahamut',
-  MEDIA: '🌎 国外媒体',
-  ECOMMERCE: '🛒 国外电商',
-  FCM: '📢 谷歌FCM',
-  GOOGLE: '🇬 谷歌服务',
-  APPLE: '🍎 苹果服务',
-  MICROSOFT: 'Ⓜ️ 微软服务',
+  MEDIA: '🌎 Global Media',
+  ECOMMERCE: '🛒 E-Commerce',
+  FCM: '📢 Google FCM',
+  GOOGLE: '🇬 Google Services',
+  APPLE: '🍎 Apple Services',
+  MICROSOFT: 'Ⓜ️ Microsoft Services',
   ONEDRIVE: '💾 OneDrive',
   PAYPAL: '💳 PayPal',
-  GAMING: '🎮 游戏平台',
+  GAMING: '🎮 Gaming',
   STEAM: '🎮 Steam',
-  PT: '⏬ PT站点',
-  SPEEDTEST: '🚀 测速工具',
+  PT: '⏬ PT Sites',
+  SPEEDTEST: '🚀 Speedtest',
 };
 
-// 地区代码 -> 组名映射，用于 buildAllRegionProxies 展开
+// Region code to group name mapping.
 const REGION_GROUP_MAP = {
   hk: GROUP.HK,
   us: GROUP.US,
@@ -75,7 +74,7 @@ const REGION_GROUP_MAP = {
   low: GROUP.LOW,
 };
 
-// 构建全量地区代理组列表：自动选择 + features 中启用的所有地区组
+// Build every enabled regional group reference.
 function buildAllRegionProxies(features, activeRegionGroups = null) {
   if (activeRegionGroups) {
     return [
@@ -93,7 +92,7 @@ function buildAllRegionProxies(features, activeRegionGroups = null) {
   return [GROUP.AUTO, ...all.map(r => REGION_GROUP_MAP[r]).filter(Boolean)];
 }
 
-// 根据 features.regions 构建地区 url-test 组（自动测速选择最低延迟节点）
+// Build regional url-test groups from features.regions.
 function buildRegionGroups(regionsMap, features) {
   const regions = features?.regions || {};
   const allRegionKeys = [
@@ -120,6 +119,31 @@ function dedupeProxies(proxies) {
 
 function hasRealProxy(proxies) {
   return (proxies || []).some(proxy => proxy && proxy !== 'DIRECT');
+}
+
+function getAvailableRegionGroupNames(regionGroups) {
+  return regionGroups
+    .filter(group => hasRealProxy(group.proxies))
+    .map(group => group.name)
+    .filter(Boolean);
+}
+
+function buildOrderedProxyChoices(regionGroups, preferredRegions, safeProxies) {
+  const availableRegionNames = getAvailableRegionGroupNames(regionGroups);
+  const preferredNames = preferredRegions
+    .map(region => REGION_GROUP_MAP[region])
+    .filter(name => availableRegionNames.indexOf(name) !== -1);
+  const remainingNames = availableRegionNames.filter(name => (
+    preferredNames.indexOf(name) === -1
+  ));
+
+  return [
+    ...preferredNames,
+    GROUP.MANUAL,
+    GROUP.AUTO,
+    ...remainingNames,
+    ...safeProxies,
+  ];
 }
 
 function buildPrunedRegionGroupNames(regionGroups, pruneEmptyRegions) {
@@ -154,8 +178,7 @@ function removePrunedRegionReferences(proxies, prunedRegionGroupNames) {
 }
 
 /**
- * 根据 features 配置构建代理组数组。
- * 始终包含基础组（自动选择、地区组、直连、手动选择），服务组按 features 开关条件添加。
+ * Build proxy groups from feature switches.
  */
 export function buildProxyGroups(regions, safeProxies, features, logger = null) {
   const pruneEmptyRegions = features?.proxyGroups?.pruneEmptyRegions === true;
@@ -190,56 +213,86 @@ export function buildProxyGroups(regions, safeProxies, features, logger = null) 
     },
   ];
 
-  // 社交与通讯
+  // Social and common services.
   if (features?.proxyGroups?.social) {
-    const socialGroups = [GROUP.IM, GROUP.SOCIAL, GROUP.TIKTOK, GROUP.MEDIA, GROUP.ECOMMERCE, GROUP.FCM]
+    const socialGroups = [
+      GROUP.IM,
+      GROUP.SOCIAL,
+      GROUP.TIKTOK,
+      GROUP.MEDIA,
+      GROUP.ECOMMERCE,
+      GROUP.FCM,
+      GROUP.GOOGLE,
+    ];
     for (const name of socialGroups) {
       groups.push({
         name,
         type: 'select',
-        proxies: [GROUP.AUTO, GROUP.MANUAL, ...allProxies, ...safeProxies], // 默认 AUTO 体验最好
+        proxies: [GROUP.AUTO, GROUP.MANUAL, ...allProxies, ...safeProxies],
       });
     }
-    
+
     groups.push({
       name: GROUP.GITHUB,
       type: 'select',
-      proxies: [GROUP.AUTO, GROUP.MANUAL, ...allProxies, ...safeProxies, GROUP.DIRECT],
+      proxies: [
+        GROUP.AUTO,
+        GROUP.MANUAL,
+        ...allProxies,
+        ...safeProxies,
+        GROUP.DIRECT,
+      ],
     });
 
     groups.push({
       name: GROUP.APPLE,
       type: 'select',
-      proxies: [GROUP.DIRECT, GROUP.AUTO, GROUP.MANUAL, ...allProxies, ...safeProxies],
+      proxies: [
+        GROUP.DIRECT,
+        GROUP.AUTO,
+        GROUP.MANUAL,
+        ...allProxies,
+        ...safeProxies,
+      ],
     });
 
     groups.push({
       name: GROUP.MICROSOFT,
       type: 'select',
-      proxies: [GROUP.DIRECT, GROUP.AUTO, GROUP.MANUAL, ...allProxies, ...safeProxies],
+      proxies: [
+        GROUP.DIRECT,
+        GROUP.AUTO,
+        GROUP.MANUAL,
+        ...allProxies,
+        ...safeProxies,
+      ],
     });
   }
 
-  // AI 服务，默认美/新/日节点优先
+  // AI services default to US, then nearby workable regions.
   if (features?.proxyGroups?.ai) {
-    const aiGroups = [GROUP.CHATGPT, GROUP.AI, GROUP.COPILOT, GROUP.GOOGLE];
-    for (const name of aiGroups) {
-      groups.push({
-        name,
-        type: 'fallback',
-        url: 'https://cp.cloudflare.com/generate_204',
-        interval: 300,
-        proxies: [GROUP.US, GROUP.SG, GROUP.JP, GROUP.MANUAL, ...allProxies, ...safeProxies].filter(Boolean),
-      });
-    }
+    groups.push({
+      name: GROUP.AI,
+      type: 'select',
+      proxies: buildOrderedProxyChoices(
+        regionGroups,
+        ['us', 'sg', 'jp', 'hk'],
+        safeProxies
+      ),
+    });
   }
 
-  // 特殊服务
+  // Special services.
   if (features?.proxyGroups?.special) {
     groups.push({
       name: GROUP.TALKATONE,
       type: 'select',
-      proxies: [GROUP.US, GROUP.MANUAL, ...allProxies, ...safeProxies].filter(Boolean),
+      proxies: [
+        GROUP.US,
+        GROUP.MANUAL,
+        ...allProxies,
+        ...safeProxies,
+      ].filter(Boolean),
     });
 
     const directFirstSpecial = [GROUP.ONEDRIVE, GROUP.PAYPAL];
@@ -251,7 +304,6 @@ export function buildProxyGroups(regions, safeProxies, features, logger = null) 
       });
     }
 
-    // PT 站点
     groups.push({
       name: GROUP.PT,
       type: 'select',
@@ -259,25 +311,46 @@ export function buildProxyGroups(regions, safeProxies, features, logger = null) 
     });
   }
 
-  // 流媒体
+  // Streaming services.
   if (features?.proxyGroups?.streaming) {
-    // 奈飞、迪士尼等首选新加坡或香港
-    const asianStreaming = [GROUP.NETFLIX, GROUP.DISNEY, GROUP.YOUTUBE, GROUP.SPOTIFY, GROUP.EMBY];
+    const asianStreaming = [GROUP.NETFLIX, GROUP.DISNEY, GROUP.SPOTIFY, GROUP.EMBY];
     for (const name of asianStreaming) {
       groups.push({
         name,
         type: 'select',
-        proxies: [GROUP.HK, GROUP.SG, GROUP.TW, GROUP.MANUAL, ...allProxies, ...safeProxies].filter(Boolean),
+        proxies: [
+          GROUP.HK,
+          GROUP.SG,
+          GROUP.TW,
+          GROUP.MANUAL,
+          ...allProxies,
+          ...safeProxies,
+        ].filter(Boolean),
       });
     }
 
-    // HBO, Prime 通常需要美国节点
+    groups.push({
+      name: GROUP.YOUTUBE,
+      type: 'select',
+      proxies: buildOrderedProxyChoices(
+        regionGroups,
+        ['hk', 'jp', 'sg', 'tw'],
+        safeProxies
+      ),
+    });
+
+    // HBO and Prime Video generally need US nodes.
     const usStreaming = [GROUP.HBO, GROUP.PRIMEVIDEO];
     for (const name of usStreaming) {
       groups.push({
         name,
         type: 'select',
-        proxies: [GROUP.US, GROUP.MANUAL, ...allProxies, ...safeProxies].filter(Boolean),
+        proxies: [
+          GROUP.US,
+          GROUP.MANUAL,
+          ...allProxies,
+          ...safeProxies,
+        ].filter(Boolean),
       });
     }
 
@@ -290,23 +363,29 @@ export function buildProxyGroups(regions, safeProxies, features, logger = null) 
     groups.push({
       name: GROUP.BAHAMUT,
       type: 'select',
-      proxies: [GROUP.TW, GROUP.DIRECT, GROUP.MANUAL].filter(Boolean), // 动画疯强绑台湾
+      proxies: [GROUP.TW, GROUP.DIRECT, GROUP.MANUAL].filter(Boolean),
     });
   }
 
-  // 游戏与兜底
+  // Gaming.
   if (features?.proxyGroups?.gaming) {
     const gamingGroups = [GROUP.GAMING, GROUP.STEAM];
     for (const name of gamingGroups) {
       groups.push({
         name,
         type: 'select',
-        proxies: [GROUP.HK, GROUP.DIRECT, GROUP.MANUAL, ...allProxies, ...safeProxies].filter(Boolean),
+        proxies: [
+          GROUP.HK,
+          GROUP.DIRECT,
+          GROUP.MANUAL,
+          ...allProxies,
+          ...safeProxies,
+        ].filter(Boolean),
       });
     }
   }
 
-  // 测速、漏网之鱼、非标端口
+  // Speedtest, final fallback, and non-standard ports.
   groups.push({
     name: GROUP.SPEEDTEST,
     type: 'select',

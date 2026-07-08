@@ -23,10 +23,10 @@ export const features = {
 
   // 代理组选择：基础 + 地区 + 流媒体 + AI + 社交 + 游戏，无特殊组
   proxyGroups: {
-    basic: true,      // 手动选择、自动选择、直连
+    basic: true,      // Manual Select, Auto Select, and Direct
     regional: true,   // 地区组（与 regions.core 联动）
-    streaming: true,  // 流媒体组（load-balance 模式）
-    ai: true,         // AI 服务组（fallback 模式）
+    streaming: true,  // Streaming service selectors
+    ai: true,         // Unified AI Services selector
     social: true,     // 社交媒体、即时通讯、GitHub 等
     gaming: true,     // 游戏平台、Steam
     special: false,   // 不含 Talkatone、OneDrive、PayPal、PT 站点
@@ -40,7 +40,6 @@ export const features = {
     ai: true,         // AI 服务分流规则
     social: true,     // 社交/通讯/Google/Apple/Microsoft 分流规则
     gaming: true,     // 游戏分流规则
-    special: false,   // 不含 Talkatone、OneDrive、Copilot、PT、PayPal 规则
-    process: false,   // 不含 PROCESS-NAME 规则（桌面环境可按需开启）
+    special: false,   // Excludes Talkatone, OneDrive, PT, and PayPal rules
   },
 };

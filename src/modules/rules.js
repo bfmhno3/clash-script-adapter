@@ -1,7 +1,7 @@
 import { GROUP } from './proxy-groups.js';
 
-// ====== 基础规则（始终包含） ======
-// 私有网络直连 + Giveup/自定义规则集 + 国内可直连服务
+// ====== Basic rules (always included) ======
+// Private networks, custom rulesets, and China-direct services.
 const BASIC_RULES = [
   'GEOSITE,private,' + GROUP.DIRECT,
   'RULE-SET,private_IP,' + GROUP.DIRECT + ',no-resolve',
@@ -19,7 +19,7 @@ const BASIC_RULES = [
   'GEOSITE,category-public-tracker,' + GROUP.DIRECT,
 ];
 
-// ====== 流媒体规则 ======
+// ====== Streaming rules ======
 const STREAMING_RULES = [
   'GEOSITE,youtube,' + GROUP.YOUTUBE,
   'GEOSITE,apple-tvplus,' + GROUP.APPLETV,
@@ -32,14 +32,14 @@ const STREAMING_RULES = [
   'GEOSITE,bahamut,' + GROUP.BAHAMUT,
 ];
 
-// ====== AI 服务规则 ======
+// ====== AI service rules ======
 const AI_RULES = [
-  'GEOSITE,openai,' + GROUP.CHATGPT,
+  'GEOSITE,openai,' + GROUP.AI,
   'GEOSITE,google-gemini,' + GROUP.AI,
   'GEOSITE,category-ai-!cn,' + GROUP.AI,
 ];
 
-// ====== 社交/通讯/通用服务规则 ======
+// ====== Social, communication, and common service rules ======
 const SOCIAL_RULES = [
   'GEOSITE,category-communication,' + GROUP.IM,
   'GEOSITE,category-social-media-!cn,' + GROUP.SOCIAL,
@@ -58,44 +58,19 @@ const SOCIAL_RULES = [
   'RULE-SET,netflix-ip,' + GROUP.NETFLIX + ',no-resolve',
 ];
 
-// ====== 游戏规则 ======
+// ====== Gaming rules ======
 const GAMING_RULES = [
   'GEOSITE,steam,' + GROUP.STEAM,
   'GEOSITE,category-games,' + GROUP.GAMING,
 ];
 
-// ====== 特殊服务规则（PayPal） ======
+// ====== Special service rules ======
 const SPECIAL_RULES = [
   'GEOSITE,paypal,' + GROUP.PAYPAL,
 ];
 
-// ====== 进程名规则（按平台过滤） ======
-const PROCESS_RULES_ANDROID = [
-  'PROCESS-NAME,com.android.captiveportallogin,' + GROUP.DIRECT,
-  'PROCESS-NAME,com.android.chrome,' + GROUP.MANUAL,
-];
-
-const PROCESS_RULES_WINDOWS = [
-  'PROCESS-NAME,chrome.exe,' + GROUP.MANUAL,
-  'PROCESS-NAME,firefox.exe,' + GROUP.MANUAL,
-];
-
-const PROCESS_RULES_MACOS = [
-  'PROCESS-NAME,Safari,' + GROUP.MANUAL,
-  'PROCESS-NAME,firefox,' + GROUP.MANUAL,
-];
-
-function getProcessRules(platform) {
-  switch (platform) {
-    case 'android': return PROCESS_RULES_ANDROID;
-    case 'windows': return PROCESS_RULES_WINDOWS;
-    case 'macos':   return PROCESS_RULES_MACOS;
-    default:        return [];  // linux/unknown 不添加进程名规则
-  }
-}
-
-// ====== 兜底规则（始终包含） ======
-// 国内直连 + MATCH 兜底；MATCH 必须是最后一条规则
+// ====== Tail rules (always included) ======
+// China-direct rules plus MATCH; MATCH must stay last.
 const TAIL_RULES = [
   'GEOSITE,cn,' + GROUP.DIRECT,
   'RULE-SET,cn-ip,' + GROUP.DIRECT + ',no-resolve',
@@ -103,13 +78,12 @@ const TAIL_RULES = [
 ];
 
 /**
- * 根据 features 拼接分流规则数组。规则从上到下按严格优先级匹配。
- * @param {Object} features - 功能开关配置
- * @param {string} [platform] - 当前平台，用于过滤进程名规则
- * @returns {string[]} 规则数组，每条格式：'类型,匹配内容,策略组[,额外参数]'
+ * Build route rules from feature switches.
+ * @param {Object} features Feature switches.
+ * @param {string} [platform] Platform included in logging context.
+ * @returns {string[]} Rules in Clash format.
  */
 export function buildRules(features, platform, logger = null) {
-  const processRules = features.rules.process ? getProcessRules(platform) : [];
   const rules = [
     ...BASIC_RULES,
     ...(features.rules.streaming ? STREAMING_RULES : []),
@@ -117,7 +91,6 @@ export function buildRules(features, platform, logger = null) {
     ...(features.rules.social ? SOCIAL_RULES : []),
     ...(features.rules.gaming ? GAMING_RULES : []),
     ...(features.rules.special ? SPECIAL_RULES : []),
-    ...processRules,
     ...TAIL_RULES,
   ];
 
@@ -126,8 +99,6 @@ export function buildRules(features, platform, logger = null) {
       ai: features.rules.ai,
       gaming: features.rules.gaming,
       platform,
-      process: features.rules.process,
-      processRuleCount: processRules.length,
       ruleCount: rules.length,
       social: features.rules.social,
       special: features.rules.special,

@@ -29,11 +29,11 @@ export const features = {
     ai: true,
     social: true,
     gaming: true,
-    special: true,    // 含 Talkatone、Copilot、OneDrive、PayPal、PT 站点
+    special: true,    // Includes Talkatone, OneDrive, PayPal, and PT sites
     pruneEmptyRegions: true,
   },
 
-  // 规则选择：全部开启，含进程名规则
+  // 规则选择：全部开启
   rules: {
     basic: true,
     streaming: true,
@@ -41,6 +41,5 @@ export const features = {
     social: true,
     gaming: true,
     special: true,
-    process: true,    // PROCESS-NAME 规则（Android 包名 / 桌面进程名）
   },
 };

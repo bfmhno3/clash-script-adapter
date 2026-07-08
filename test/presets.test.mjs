@@ -66,7 +66,7 @@ describe('preset/full', () => {
 
   it('classifies HK proxy into HK group', () => {
     const config = fullMain(mockConfig(['🇭🇰 HK01', '🇺🇸 US01']), 'windows');
-    const hkGroup = config['proxy-groups'].find(g => g.name.includes('香港'));
+    const hkGroup = config['proxy-groups'].find(g => g.name === GROUP.HK);
     assert.ok(hkGroup, 'HK group should exist');
     assert.ok(hkGroup.proxies.includes('🇭🇰 HK01'));
   });

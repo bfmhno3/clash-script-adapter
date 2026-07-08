@@ -2,20 +2,51 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { buildRules } from '../src/modules/rules.js';
-import { GROUP } from '../src/modules/proxy-groups.js';
+import { GROUP, buildProxyGroups } from '../src/modules/proxy-groups.js';
 
 const ALL_ON = {
   rules: {
     basic: true, streaming: true, ai: true, social: true,
-    gaming: true, special: true, process: true,
+    gaming: true, special: true,
   },
 };
 
 const ALL_OFF = {
   rules: {
     basic: true, streaming: false, ai: false, social: false,
-    gaming: false, special: false, process: false,
+    gaming: false, special: false,
   },
+};
+
+const ALL_PROXY_GROUPS_ON = {
+  regions: {
+    core: ['hk', 'us', 'jp', 'sg', 'tw', 'kr'],
+    extended: ['ca', 'gb', 'fr', 'de', 'nl', 'tr', 'ru'],
+    special: ['other', 'home', 'low'],
+  },
+  proxyGroups: {
+    basic: true, regional: true, streaming: true, ai: true,
+    social: true, gaming: true, special: true,
+  },
+};
+
+const REGIONS_MAP = {
+  hk: ['HK01'],
+  us: ['US01'],
+  jp: ['JP01'],
+  sg: ['SG01'],
+  tw: ['TW01'],
+  kr: ['KR01'],
+  ca: ['CA01'],
+  gb: ['GB01'],
+  fr: ['FR01'],
+  de: ['DE01'],
+  nl: ['NL01'],
+  tr: ['TR01'],
+  ru: ['RU01'],
+  other: ['OTHER01'],
+  home: ['HOME01'],
+  low: ['LOW01'],
 };
 
 describe('buildRules', () => {
@@ -52,6 +83,20 @@ describe('buildRules', () => {
     assert.ok(!off.some(r => r.includes('google-gemini')));
   });
 
+  it('AI rules target the unified AI Services group', () => {
+    const rules = buildRules(ALL_ON);
+    const aiRules = rules.filter(rule => (
+      rule.startsWith('GEOSITE,openai,') ||
+        rule.startsWith('GEOSITE,google-gemini,') ||
+        rule.startsWith('GEOSITE,category-ai-!cn,')
+    ));
+
+    assert.equal(aiRules.length, 3);
+    for (const rule of aiRules) {
+      assert.equal(rule.split(',')[2], GROUP.AI);
+    }
+  });
+
   it('social toggle controls Telegram/Twitter/Facebook rules', () => {
     const on = buildRules(ALL_ON);
     const off = buildRules(ALL_OFF);
@@ -75,32 +120,15 @@ describe('buildRules', () => {
   it('special toggle controls PayPal rules', () => {
     const on = buildRules(ALL_ON);
     const off = buildRules(ALL_OFF);
-    assert.ok(on.some(r => r.includes('PayPal')));
-    assert.ok(!off.some(r => r.includes('PayPal')));
+    assert.ok(on.some(r => r.includes('paypal')));
+    assert.ok(!off.some(r => r.includes('paypal')));
   });
 
-  it('process toggle controls PROCESS-NAME rules', () => {
-    const on = buildRules(ALL_ON, 'windows');
-    const off = buildRules(ALL_OFF, 'windows');
-    assert.ok(on.some(r => r.startsWith('PROCESS-NAME,')));
-    assert.ok(!off.some(r => r.startsWith('PROCESS-NAME,')));
-  });
-
-  it('process rules are platform-specific', () => {
-    const win = buildRules(ALL_ON, 'windows');
-    assert.ok(win.some(r => r.includes('chrome.exe')));
-    assert.ok(!win.some(r => r.includes('com.android.chrome')));
-
-    const android = buildRules(ALL_ON, 'android');
-    assert.ok(android.some(r => r.includes('com.android.chrome')));
-    assert.ok(!android.some(r => r.includes('chrome.exe')));
-
-    const macos = buildRules(ALL_ON, 'macos');
-    assert.ok(macos.some(r => r.includes('Safari')));
-    assert.ok(!macos.some(r => r.includes('chrome.exe')));
-
-    const linux = buildRules(ALL_ON, 'linux');
-    assert.ok(!linux.some(r => r.startsWith('PROCESS-NAME,')));
+  it('does not generate PROCESS-NAME rules for any platform', () => {
+    for (const platform of ['windows', 'macos', 'linux', 'android', 'unknown']) {
+      const rules = buildRules(ALL_ON, platform);
+      assert.ok(!rules.some(r => r.startsWith('PROCESS-NAME,')), platform);
+    }
   });
 
   it('all features on produces more rules than all off', () => {
@@ -120,6 +148,25 @@ describe('buildRules', () => {
         assert.ok(
           groupValues.has(group) || group === 'DIRECT' || group === 'REJECT',
           `Rule "${rule}" references unknown group "${group}"`
+        );
+      }
+    }
+  });
+
+  it('all rules reference generated groups for matching feature switches', () => {
+    const generatedGroupNames = new Set(
+      buildProxyGroups(REGIONS_MAP, ['HK01', 'US01', 'JP01'], ALL_PROXY_GROUPS_ON)
+        .map(group => group.name)
+    );
+    const rules = buildRules(ALL_ON, 'windows');
+
+    for (const rule of rules) {
+      const parts = rule.split(',');
+      const groupPart = parts.length >= 3 ? parts[2]?.trim() : parts[1]?.trim();
+      if (groupPart) {
+        assert.ok(
+          generatedGroupNames.has(groupPart) || groupPart === 'DIRECT' || groupPart === 'REJECT',
+          `Rule "${rule}" references a group that is not generated`
         );
       }
     }

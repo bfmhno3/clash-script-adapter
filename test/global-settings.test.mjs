@@ -2,6 +2,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { buildGlobalSettings, buildRuleProviders } from '../src/modules/global-settings.js';
+import { GROUP } from '../src/modules/proxy-groups.js';
 import { main as fullMain } from '../src/presets/full.js';
 
 function getRuleSetProviderNames(rules) {
@@ -139,8 +140,8 @@ describe('buildRuleProviders', () => {
     const config = fullMain({ proxies: [{ name: 'HK01' }] }, 'windows');
     const providers = config['rule-providers'];
 
-    assert.ok(config.rules.includes('GEOSITE,category-games,🎮 游戏平台'));
-    assert.ok(config.rules.includes('GEOSITE,primevideo,🎥 PrimeVideo'));
+    assert.ok(config.rules.includes('GEOSITE,category-games,' + GROUP.GAMING));
+    assert.ok(config.rules.includes('GEOSITE,primevideo,' + GROUP.PRIMEVIDEO));
     assert.equal(providers['category-games'], undefined);
     assert.equal(providers.primevideo, undefined);
     assert.equal(providers['category-social-media'], undefined);

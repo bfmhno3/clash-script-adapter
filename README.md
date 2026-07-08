@@ -75,7 +75,7 @@
 | Sniffer | yes |
 | NTP | yes |
 | 代理组 | ~40 |
-| 规则集 | 全量 + 进程名 |
+| 规则集 | 全量 |
 | 产物 | ~14-18 KB |
 
 适用于：透明代理、全功能需求
@@ -159,14 +159,18 @@ clash-script-adapter/
 
 ```
 +-------------------------------------------------------------+
-|                    代理组类型选择                              |
+|                  Proxy Group Type Selection                 |
 +-------------------+-----------------------------------------+
-|   url-test        |  地区组、自动选择（自动测速选最低延迟）    |
-|   fallback        |  AI 服务组（按顺序尝试，被封时自动切换）  |
-|   load-balance    |  流媒体组（consistent-hashing 分散压力） |
-|   select          |  手动选择、直连、特殊服务                 |
+|   url-test        |  Regional groups and Auto Select        |
+|   select          |  Manual Select, Direct, AI, streaming   |
+|                   |  and special service groups             |
 +-------------------+-----------------------------------------+
 ```
+
+All user-visible proxy group names are generated in English. AI-related rules
+share the `AI Services` selector, which defaults to `United States` first.
+`YouTube` defaults to `Hong Kong`, then `Japan`, because the first selector
+entry becomes the initial choice in Clash clients.
 
 ### 地区覆盖
 
@@ -209,14 +213,13 @@ clash-script-adapter/
 
 | 类别 | 规则类型 | 策略组 |
 |------|---------|--------|
-| 基础 | `GEOSITE(private)` / `GEOIP(private)` / `RULE-SET(Custom_*)` | 直连 |
-| 流媒体 | `GEOSITE(youtube/netflix/disney/hbo/spotify/...)` | `load-balance` |
-| AI 服务 | `GEOSITE(openai/category-ai-!cn)` | `fallback` |
+| 基础 | `GEOSITE(private)` / `GEOIP(private)` / `RULE-SET(Custom_*)` | `Direct` |
+| 流媒体 | `GEOSITE(youtube/netflix/disney/hbo/spotify/...)` | `select` |
+| AI 服务 | `GEOSITE(openai/google-gemini/category-ai-!cn)` | `AI Services` |
 | 社交通讯 | `GEOSITE(category-communication/social-media/github/...)` | `select` |
 | 游戏 | `GEOSITE(steam/category-games)` | `select` |
 | 特殊服务 | `GEOSITE(talkatone/onedrive/bing/paypal/...)` | `select` |
-| 进程名 | `PROCESS-NAME(chrome/firefox/safari/...)` | `select` |
-| 兜底 | `GEOSITE(cn) / GEOIP(cn) / MATCH` | 直连 / 漏网之鱼 |
+| 兜底 | `GEOSITE(cn) / GEOIP(cn) / MATCH` | `Direct` / `Final` |
 
 ---
 

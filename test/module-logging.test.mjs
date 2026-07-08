@@ -83,7 +83,7 @@ describe('module logging', () => {
     assert.equal(rulesCall.level, 'info');
     assert.equal(rulesCall.context.platform, 'windows');
     assert.equal(rulesCall.context.ruleCount, rules.length);
-    assert.equal(rulesCall.context.processRuleCount, 2);
+    assert.equal(rules.some(rule => rule.startsWith('PROCESS-NAME,')), false);
 
     const groupLogger = createSpyLogger();
     const regions = getRegionProxies(['HK01-private', 'US01-secret']);
@@ -109,6 +109,7 @@ describe('module logging', () => {
     buildSnifferConfig(logger);
 
     assert.equal(findCall(calls, 'dns-built').context.fakeIpFilterCount, dns['fake-ip-filter'].length);
+    assert.equal(findCall(calls, 'global-settings-built').context.findProcessMode, 'strict');
     assert.equal(findCall(calls, 'global-settings-built').context.routingMark, true);
     assert.equal(findCall(calls, 'rule-providers-built').context.providerCount, Object.keys(providers).length);
     assert.equal(findCall(calls, 'tun-built').context.autoRedirect, true);

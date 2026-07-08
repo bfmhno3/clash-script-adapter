@@ -18,6 +18,12 @@ describe('GROUP constants', () => {
       assert.ok(GROUP[key] !== undefined, `GROUP.${key} should be defined`);
     }
   });
+
+  it('uses English-only display names', () => {
+    for (const value of Object.values(GROUP)) {
+      assert.equal(/[\u4e00-\u9fff]/.test(value), false, `${value} contains Chinese text`);
+    }
+  });
 });
 
 const ALL_FEATURES_ON = {
@@ -112,17 +118,80 @@ describe('buildProxyGroups', () => {
     assert.ok(!offNames.includes(GROUP.YOUTUBE));
   });
 
-  it('ai toggle controls ChatGPT/AI/Copilot groups with type fallback', () => {
+  it('ai toggle controls the unified AI Services selector', () => {
     const on = buildProxyGroups(REGIONS_MAP, ['proxy1'], ALL_FEATURES_ON);
     const off = buildProxyGroups(REGIONS_MAP, ['proxy1'], ALL_FEATURES_OFF);
     const onNames = on.map(g => g.name);
     const offNames = off.map(g => g.name);
-    assert.ok(onNames.includes(GROUP.CHATGPT));
-    assert.ok(!offNames.includes(GROUP.CHATGPT));
     assert.ok(onNames.includes(GROUP.AI));
     assert.ok(!offNames.includes(GROUP.AI));
-    const chatgpt = on.find(g => g.name === GROUP.CHATGPT);
-    assert.equal(chatgpt.type, 'fallback');
+    assert.ok(!onNames.includes(GROUP.CHATGPT));
+    assert.ok(!onNames.includes(GROUP.COPILOT));
+    const ai = on.find(g => g.name === GROUP.AI);
+    assert.equal(ai.type, 'select');
+    assert.equal(ai.url, undefined);
+    assert.equal(ai.interval, undefined);
+    assert.deepEqual(ai.proxies.slice(0, 6), [
+      GROUP.US,
+      GROUP.SG,
+      GROUP.JP,
+      GROUP.HK,
+      GROUP.MANUAL,
+      GROUP.AUTO,
+    ]);
+  });
+
+  it('AI Services skips unavailable preferred regions', () => {
+    const groups = buildProxyGroups({
+      ...REGIONS_MAP,
+      us: ['DIRECT'],
+      sg: [],
+      jp: ['JP01'],
+      hk: ['HK01'],
+    }, ['HK01', 'JP01'], ALL_FEATURES_ON);
+    const ai = groups.find(g => g.name === GROUP.AI);
+
+    assert.deepEqual(ai.proxies.slice(0, 4), [
+      GROUP.JP,
+      GROUP.HK,
+      GROUP.MANUAL,
+      GROUP.AUTO,
+    ]);
+    assert.ok(!ai.proxies.includes(GROUP.US));
+    assert.ok(!ai.proxies.includes(GROUP.SG));
+  });
+
+  it('YouTube defaults to Hong Kong then Japan', () => {
+    const groups = buildProxyGroups(REGIONS_MAP, ['proxy1'], ALL_FEATURES_ON);
+    const youtube = groups.find(g => g.name === GROUP.YOUTUBE);
+
+    assert.deepEqual(youtube.proxies.slice(0, 6), [
+      GROUP.HK,
+      GROUP.JP,
+      GROUP.SG,
+      GROUP.TW,
+      GROUP.MANUAL,
+      GROUP.AUTO,
+    ]);
+  });
+
+  it('YouTube skips unavailable preferred regions', () => {
+    const groups = buildProxyGroups({
+      ...REGIONS_MAP,
+      hk: ['DIRECT'],
+      jp: ['JP01'],
+      sg: ['SG01'],
+    }, ['JP01', 'SG01'], ALL_FEATURES_ON);
+    const youtube = groups.find(g => g.name === GROUP.YOUTUBE);
+
+    assert.deepEqual(youtube.proxies.slice(0, 5), [
+      GROUP.JP,
+      GROUP.SG,
+      GROUP.TW,
+      GROUP.MANUAL,
+      GROUP.AUTO,
+    ]);
+    assert.ok(!youtube.proxies.includes(GROUP.HK));
   });
 
   it('social toggle controls IM/Social/TikTok groups', () => {

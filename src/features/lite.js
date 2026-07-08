@@ -41,6 +41,5 @@ export const features = {
     social: false,
     gaming: false,
     special: false,
-    process: false,
   },
 };
