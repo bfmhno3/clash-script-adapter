@@ -19,11 +19,17 @@ jobs:
       - name: Install mise
         uses: jdx/mise-action@v2
 
-      - name: Install Dependencies
+      - name: Install Node
         run: mise install
 
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Test
+        run: npm test
+
       - name: Build Minified Script
-        run: mise run build
+        run: npm run build
 
       - name: Create Release and Upload Asset
         uses: softprops/action-gh-release@v2
