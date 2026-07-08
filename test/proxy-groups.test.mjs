@@ -32,6 +32,14 @@ const ALL_FEATURES_ON = {
   },
 };
 
+const PRUNE_EMPTY_REGION_FEATURES = {
+  ...ALL_FEATURES_ON,
+  proxyGroups: {
+    ...ALL_FEATURES_ON.proxyGroups,
+    pruneEmptyRegions: true,
+  },
+};
+
 const ALL_FEATURES_OFF = {
   regions: {
     core: ['hk', 'us', 'jp'],
@@ -162,6 +170,37 @@ describe('buildProxyGroups', () => {
     assert.deepEqual(hkGroup.proxies, ['HK01', 'HK02']);
   });
 
+  it('prunes empty regional groups and references when enabled', () => {
+    const groups = buildProxyGroups({
+      ...REGIONS_MAP,
+      hk: ['HK01'],
+      us: ['US01'],
+      jp: ['DIRECT'],
+      sg: [],
+      tw: ['TW01'],
+      ca: ['DIRECT'],
+    }, ['HK01', 'US01', 'TW01'], PRUNE_EMPTY_REGION_FEATURES);
+    const names = groups.map(g => g.name);
+
+    assert.ok(names.includes(GROUP.AUTO));
+    assert.ok(names.includes(GROUP.DIRECT));
+    assert.ok(names.includes(GROUP.MANUAL));
+    assert.ok(names.includes(GROUP.CATCH_ALL));
+    assert.ok(names.includes(GROUP.NON_STD));
+    assert.ok(names.includes(GROUP.HK));
+    assert.ok(names.includes(GROUP.US));
+    assert.ok(names.includes(GROUP.TW));
+    assert.ok(!names.includes(GROUP.JP));
+    assert.ok(!names.includes(GROUP.SG));
+    assert.ok(!names.includes(GROUP.CA));
+
+    for (const group of groups) {
+      assert.ok(!group.proxies.includes(GROUP.JP), `${group.name} includes pruned JP group`);
+      assert.ok(!group.proxies.includes(GROUP.SG), `${group.name} includes pruned SG group`);
+      assert.ok(!group.proxies.includes(GROUP.CA), `${group.name} includes pruned CA group`);
+    }
+  });
+
   it('CATCH_ALL always exists', () => {
     const groups = buildProxyGroups(REGIONS_MAP, ['proxy1'], ALL_FEATURES_OFF);
     const catchAll = groups.find(g => g.name === GROUP.CATCH_ALL);
@@ -178,5 +217,15 @@ describe('buildProxyGroups', () => {
   it('falls back to DIRECT when safeProxies is empty', () => {
     const groups = buildProxyGroups(REGIONS_MAP, ['DIRECT'], ALL_FEATURES_OFF);
     assert.ok(groups.length > 0);
+  });
+
+  it('keeps DIRECT fallback region groups when pruning is disabled', () => {
+    const groups = buildProxyGroups({
+      ...REGIONS_MAP,
+      jp: ['DIRECT'],
+    }, ['HK01'], ALL_FEATURES_ON);
+    const jpGroup = groups.find(g => g.name === GROUP.JP);
+
+    assert.deepEqual(jpGroup.proxies, ['DIRECT']);
   });
 });

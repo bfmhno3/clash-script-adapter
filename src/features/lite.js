@@ -30,6 +30,7 @@ export const features = {
     social: false,    // 不含社交媒体组
     gaming: false,    // 不含游戏组
     special: false,   // 不含特殊组
+    pruneEmptyRegions: false,
   },
 
   // 规则选择：仅基础 + 流媒体

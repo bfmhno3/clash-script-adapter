@@ -30,6 +30,7 @@ export const features = {
     social: true,     // 社交媒体、即时通讯、GitHub 等
     gaming: true,     // 游戏平台、Steam
     special: false,   // 不含 Talkatone、OneDrive、PayPal、PT 站点
+    pruneEmptyRegions: false,
   },
 
   // 规则选择：与 proxyGroups 联动

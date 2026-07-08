@@ -76,7 +76,14 @@ const REGION_GROUP_MAP = {
 };
 
 // 构建全量地区代理组列表：自动选择 + features 中启用的所有地区组
-function buildAllRegionProxies(features) {
+function buildAllRegionProxies(features, activeRegionGroups = null) {
+  if (activeRegionGroups) {
+    return [
+      GROUP.AUTO,
+      ...activeRegionGroups.map(group => group.name).filter(Boolean),
+    ];
+  }
+
   const regions = features?.regions || {};
   const all = [
     ...(regions.core || []),
@@ -111,13 +118,54 @@ function dedupeProxies(proxies) {
   ));
 }
 
+function hasRealProxy(proxies) {
+  return (proxies || []).some(proxy => proxy && proxy !== 'DIRECT');
+}
+
+function buildPrunedRegionGroupNames(regionGroups, pruneEmptyRegions) {
+  if (!pruneEmptyRegions) {
+    return [];
+  }
+
+  return regionGroups
+    .filter(group => !hasRealProxy(group.proxies))
+    .map(group => group.name)
+    .filter(Boolean);
+}
+
+function filterRegionGroups(regionGroups, prunedRegionGroupNames) {
+  if (prunedRegionGroupNames.length === 0) {
+    return regionGroups;
+  }
+
+  return regionGroups.filter(group => (
+    prunedRegionGroupNames.indexOf(group.name) === -1
+  ));
+}
+
+function removePrunedRegionReferences(proxies, prunedRegionGroupNames) {
+  if (prunedRegionGroupNames.length === 0) {
+    return proxies;
+  }
+
+  return proxies.filter(proxy => (
+    prunedRegionGroupNames.indexOf(proxy) === -1
+  ));
+}
+
 /**
  * 根据 features 配置构建代理组数组。
  * 始终包含基础组（自动选择、地区组、直连、手动选择），服务组按 features 开关条件添加。
  */
 export function buildProxyGroups(regions, safeProxies, features, logger = null) {
-  const allProxies = buildAllRegionProxies(features);
-  const regionGroups = buildRegionGroups(regions, features);
+  const pruneEmptyRegions = features?.proxyGroups?.pruneEmptyRegions === true;
+  const rawRegionGroups = buildRegionGroups(regions, features);
+  const prunedRegionGroupNames = buildPrunedRegionGroupNames(
+    rawRegionGroups,
+    pruneEmptyRegions
+  );
+  const regionGroups = filterRegionGroups(rawRegionGroups, prunedRegionGroupNames);
+  const allProxies = buildAllRegionProxies(features, regionGroups);
 
   // Always-present basic groups
   const groups = [
@@ -275,13 +323,18 @@ export function buildProxyGroups(regions, safeProxies, features, logger = null) 
     proxies: [GROUP.DIRECT, GROUP.CATCH_ALL],
   });
 
-  const result = groups.map(group => ({
+  const prunedGroups = groups.map(group => ({
+    ...group,
+    proxies: removePrunedRegionReferences(group.proxies, prunedRegionGroupNames),
+  }));
+
+  const result = prunedGroups.map(group => ({
     ...group,
     proxies: dedupeProxies(group.proxies),
   }));
 
   if (logger) {
-    const dedupedGroupCount = groups.filter((group, index) => (
+    const dedupedGroupCount = prunedGroups.filter((group, index) => (
       group.proxies.length !== result[index].proxies.length
     )).length;
 
@@ -291,6 +344,7 @@ export function buildProxyGroups(regions, safeProxies, features, logger = null) 
       gaming: features?.proxyGroups?.gaming === true,
       groupCount: result.length,
       regionGroupCount: regionGroups.length,
+      prunedRegionGroupCount: prunedRegionGroupNames.length,
       safeProxyCount: safeProxies.length,
       social: features?.proxyGroups?.social === true,
       special: features?.proxyGroups?.special === true,

@@ -30,6 +30,7 @@ export const features = {
     social: true,
     gaming: true,
     special: true,    // 含 Talkatone、Copilot、OneDrive、PayPal、PT 站点
+    pruneEmptyRegions: true,
   },
 
   // 规则选择：全部开启，含进程名规则

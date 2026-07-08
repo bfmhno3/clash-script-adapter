@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { main as fullMain } from '../src/presets/full.js';
 import { main as defaultMain } from '../src/presets/default.js';
 import { main as liteMain } from '../src/presets/lite.js';
+import { GROUP } from '../src/modules/proxy-groups.js';
 
 function mockConfig(proxies = []) {
   return { proxies: proxies.map(name => ({ name })) };
@@ -68,6 +69,18 @@ describe('preset/full', () => {
     const hkGroup = config['proxy-groups'].find(g => g.name.includes('香港'));
     assert.ok(hkGroup, 'HK group should exist');
     assert.ok(hkGroup.proxies.includes('🇭🇰 HK01'));
+  });
+
+  it('hides full preset regional groups without real proxies', () => {
+    const config = fullMain(mockConfig(['🇭🇰 HK01', '🇺🇸 US01']), 'windows');
+    const names = config['proxy-groups'].map(g => g.name);
+
+    assert.ok(names.includes(GROUP.HK));
+    assert.ok(names.includes(GROUP.US));
+    assert.ok(!names.includes(GROUP.JP));
+    assert.ok(!names.includes(GROUP.SG));
+    assert.ok(!names.includes(GROUP.CA));
+    assert.ok(!names.includes(GROUP.OTHER));
   });
 
   it('logs an info summary during normal generation', () => {

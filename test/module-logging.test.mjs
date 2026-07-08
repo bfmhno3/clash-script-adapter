@@ -92,6 +92,7 @@ describe('module logging', () => {
 
     assert.equal(groupsCall.level, 'info');
     assert.equal(groupsCall.context.groupCount, groups.length);
+    assert.equal(groupsCall.context.prunedRegionGroupCount, 14);
     assert.equal(groupsCall.context.safeProxyCount, 2);
     assert.equal(JSON.stringify(groupsCall.context).includes('HK01-private'), false);
     assert.equal(JSON.stringify(groupsCall.context).includes('US01-secret'), false);

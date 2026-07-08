@@ -34,6 +34,7 @@ describe('features/full.js', () => {
     assert.equal(fullFeatures.proxyGroups.social, true);
     assert.equal(fullFeatures.proxyGroups.gaming, true);
     assert.equal(fullFeatures.proxyGroups.special, true);
+    assert.equal(fullFeatures.proxyGroups.pruneEmptyRegions, true);
   });
 
   it('enables all rule switches including process', () => {
@@ -72,6 +73,7 @@ describe('features/default.js', () => {
     assert.equal(defaultFeatures.proxyGroups.social, true);
     assert.equal(defaultFeatures.proxyGroups.gaming, true);
     assert.equal(defaultFeatures.proxyGroups.special, false);
+    assert.equal(defaultFeatures.proxyGroups.pruneEmptyRegions, false);
   });
 
   it('disables special and process rules', () => {
@@ -106,6 +108,7 @@ describe('features/lite.js', () => {
     assert.equal(liteFeatures.proxyGroups.social, false);
     assert.equal(liteFeatures.proxyGroups.gaming, false);
     assert.equal(liteFeatures.proxyGroups.special, false);
+    assert.equal(liteFeatures.proxyGroups.pruneEmptyRegions, false);
   });
 
   it('enables only basic and streaming rules', () => {
