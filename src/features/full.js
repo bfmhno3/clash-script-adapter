@@ -1,3 +1,6 @@
+export const LOGGING_ENABLED = true;
+export const LOGGING_LEVEL = 'warn';
+
 /**
  * 完整方案 features 配置
  * 适用场景：完整功能（TUN 透明代理），16 个地区，全量代理组和规则
@@ -6,6 +9,10 @@ export const features = {
   tun: true,        // 包含 TUN 配置，支持透明代理
   sniffer: true,    // 包含嗅探器
   ntp: true,        // 包含 NTP 配置
+  logging: {
+    enabled: LOGGING_ENABLED,
+    level: LOGGING_LEVEL,
+  },
 
   // 地区选择：全部 16 个地区
   regions: {

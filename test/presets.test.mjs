@@ -9,6 +9,37 @@ function mockConfig(proxies = []) {
   return { proxies: proxies.map(name => ({ name })) };
 }
 
+function captureConsole(fn) {
+  const originalConsole = globalThis.console;
+  const calls = [];
+  globalThis.console = {
+    error: message => calls.push(['error', message]),
+    warn: message => calls.push(['warn', message]),
+    log: message => calls.push(['log', message]),
+  };
+
+  try {
+    fn();
+  } finally {
+    globalThis.console = originalConsole;
+  }
+
+  return calls;
+}
+
+function withoutNavigator(fn) {
+  const origDesc = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
+  Object.defineProperty(globalThis, 'navigator', {
+    value: undefined, configurable: true, writable: true,
+  });
+
+  try {
+    fn();
+  } finally {
+    if (origDesc) Object.defineProperty(globalThis, 'navigator', origDesc);
+  }
+}
+
 describe('preset/full', () => {
   it('returns config with all required fields', () => {
     const config = fullMain(mockConfig(['🇭🇰 HK01', '🇺🇸 US01']), 'windows');
@@ -38,6 +69,19 @@ describe('preset/full', () => {
     assert.ok(hkGroup, 'HK group should exist');
     assert.ok(hkGroup.proxies.includes('🇭🇰 HK01'));
   });
+
+  it('logs a sanitized warning when falling back to DIRECT', () => {
+    const calls = captureConsole(() => {
+      withoutNavigator(() => fullMain(mockConfig([]), 'linux'));
+    });
+
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0][0], 'warn');
+    assert.match(calls[0][1], / WARN clash-script-adapter\.preset\.full empty-proxies-fallback /);
+    assert.match(calls[0][1], /platform=linux/);
+    assert.match(calls[0][1], /proxyCount=0/);
+    assert.doesNotMatch(calls[0][1], /secret|proxies=|DIRECT/);
+  });
 });
 
 describe('preset/default', () => {
@@ -56,6 +100,19 @@ describe('preset/default', () => {
     assert.ok(config.sniffer);
     assert.equal(config.tun, undefined);
   });
+
+  it('logs a sanitized warning when falling back to DIRECT', () => {
+    const calls = captureConsole(() => {
+      withoutNavigator(() => defaultMain(mockConfig([]), 'linux'));
+    });
+
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0][0], 'warn');
+    assert.match(calls[0][1], / WARN clash-script-adapter\.preset\.default empty-proxies-fallback /);
+    assert.match(calls[0][1], /platform=linux/);
+    assert.match(calls[0][1], /proxyCount=0/);
+    assert.doesNotMatch(calls[0][1], /secret|proxies=|DIRECT/);
+  });
 });
 
 describe('preset/lite', () => {
@@ -68,18 +125,31 @@ describe('preset/lite', () => {
     assert.equal(config.tun, undefined);
     assert.equal(config.sniffer, undefined);
   });
+
+  it('does not log when falling back to DIRECT', () => {
+    const calls = captureConsole(() => {
+      withoutNavigator(() => liteMain(mockConfig([]), 'linux'));
+    });
+
+    assert.deepEqual(calls, []);
+  });
 });
 
 describe('all presets', () => {
   it('handle empty proxies without error', () => {
     const emptyConfig = mockConfig([]);
-    assert.doesNotThrow(() => fullMain(emptyConfig, 'unknown'));
-    assert.doesNotThrow(() => defaultMain({ proxies: [] }, 'unknown'));
-    assert.doesNotThrow(() => liteMain({ proxies: [] }, 'unknown'));
+    captureConsole(() => {
+      assert.doesNotThrow(() => fullMain(emptyConfig, 'unknown'));
+      assert.doesNotThrow(() => defaultMain({ proxies: [] }, 'unknown'));
+      assert.doesNotThrow(() => liteMain({ proxies: [] }, 'unknown'));
+    });
   });
 
   it('empty proxies results in DIRECT fallback in all groups', () => {
-    const config = defaultMain(mockConfig([]), 'unknown');
+    let config;
+    captureConsole(() => {
+      config = defaultMain(mockConfig([]), 'unknown');
+    });
     const allGroupNames = config['proxy-groups'].map(g => g.name);
     assert.ok(allGroupNames.length > 0);
   });

@@ -27,7 +27,7 @@ async function build() {
       passes: 3,
       toplevel: true,
       top_retain: ['main'],
-      drop_console: true,
+      drop_console: false,
       dead_code: true,
       evaluate: true,
       unsafe: false,

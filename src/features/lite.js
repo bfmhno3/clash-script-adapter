@@ -1,3 +1,6 @@
+export const LOGGING_ENABLED = false;
+export const LOGGING_LEVEL = 'silent';
+
 /**
  * 轻量方案 features 配置
  * 适用场景：低性能设备、路由器，3 个精简地区，最少规则集
@@ -6,6 +9,10 @@ export const features = {
   tun: false,       // 不包含 TUN
   sniffer: false,   // 不包含嗅探器（减少资源占用）
   ntp: false,       // 不包含 NTP
+  logging: {
+    enabled: LOGGING_ENABLED,
+    level: LOGGING_LEVEL,
+  },
 
   // 地区选择：仅 3 个最常用地区
   regions: {

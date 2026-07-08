@@ -6,6 +6,13 @@ import { features as defaultFeatures } from '../src/features/default.js';
 import { features as liteFeatures } from '../src/features/lite.js';
 
 describe('features/full.js', () => {
+  it('enables warning-level runtime logging', () => {
+    assert.deepEqual(fullFeatures.logging, {
+      enabled: true,
+      level: 'warn',
+    });
+  });
+
   it('enables tun, sniffer, ntp', () => {
     assert.equal(fullFeatures.tun, true);
     assert.equal(fullFeatures.sniffer, true);
@@ -40,6 +47,13 @@ describe('features/full.js', () => {
 });
 
 describe('features/default.js', () => {
+  it('enables warning-level runtime logging', () => {
+    assert.deepEqual(defaultFeatures.logging, {
+      enabled: true,
+      level: 'warn',
+    });
+  });
+
   it('disables tun, enables sniffer and ntp', () => {
     assert.equal(defaultFeatures.tun, false);
     assert.equal(defaultFeatures.sniffer, true);
@@ -67,6 +81,13 @@ describe('features/default.js', () => {
 });
 
 describe('features/lite.js', () => {
+  it('disables runtime logging', () => {
+    assert.deepEqual(liteFeatures.logging, {
+      enabled: false,
+      level: 'silent',
+    });
+  });
+
   it('disables tun, sniffer, ntp', () => {
     assert.equal(liteFeatures.tun, false);
     assert.equal(liteFeatures.sniffer, false);
