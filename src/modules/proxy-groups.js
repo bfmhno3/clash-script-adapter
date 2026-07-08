@@ -394,7 +394,7 @@ export function buildProxyGroups(regions, safeProxies, features, logger = null) 
   groups.push({
     name: GROUP.CATCH_ALL,
     type: 'select',
-    proxies: [GROUP.DIRECT, GROUP.AUTO, GROUP.MANUAL, ...allProxies, ...safeProxies],
+    proxies: [GROUP.AUTO, GROUP.MANUAL, ...allProxies, ...safeProxies, GROUP.DIRECT],
   });
   groups.push({
     name: GROUP.NON_STD,

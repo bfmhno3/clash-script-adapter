@@ -276,6 +276,15 @@ describe('buildProxyGroups', () => {
     assert.ok(catchAll);
   });
 
+  it('CATCH_ALL prefers proxy choices before DIRECT', () => {
+    const groups = buildProxyGroups(REGIONS_MAP, ['proxy1'], ALL_FEATURES_OFF);
+    const catchAll = groups.find(g => g.name === GROUP.CATCH_ALL);
+
+    assert.equal(catchAll.proxies[0], GROUP.AUTO);
+    assert.ok(catchAll.proxies.includes(GROUP.DIRECT));
+    assert.notEqual(catchAll.proxies.indexOf(GROUP.DIRECT), 0);
+  });
+
   it('NON_STD contains DIRECT and CATCH_ALL', () => {
     const groups = buildProxyGroups(REGIONS_MAP, ['proxy1'], ALL_FEATURES_OFF);
     const nonStd = groups.find(g => g.name === GROUP.NON_STD);
