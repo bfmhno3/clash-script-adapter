@@ -80,6 +80,17 @@ describe('buildProxyGroups', () => {
     assert.ok(onGroups.length > offGroups.length);
   });
 
+  it('does not duplicate references within any group proxy list', () => {
+    const groups = buildProxyGroups(REGIONS_MAP, ['proxy1'], ALL_FEATURES_ON);
+
+    for (const group of groups) {
+      const duplicateRefs = group.proxies.filter(
+        (proxy, index, proxies) => proxies.indexOf(proxy) !== index
+      );
+      assert.deepEqual(duplicateRefs, [], `${group.name} has duplicate proxies`);
+    }
+  });
+
   it('streaming toggle controls Netflix/Disney/YouTube groups', () => {
     const on = buildProxyGroups(REGIONS_MAP, ['proxy1'], ALL_FEATURES_ON);
     const off = buildProxyGroups(REGIONS_MAP, ['proxy1'], ALL_FEATURES_OFF);

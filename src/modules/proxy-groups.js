@@ -105,6 +105,12 @@ function buildRegionGroups(regionsMap, features) {
   }));
 }
 
+function dedupeProxies(proxies) {
+  return proxies.filter((proxy, index, allProxies) => (
+    proxy && allProxies.indexOf(proxy) === index
+  ));
+}
+
 /**
  * 根据 features 配置构建代理组数组。
  * 始终包含基础组（自动选择、地区组、直连、手动选择），服务组按 features 开关条件添加。
@@ -269,5 +275,8 @@ export function buildProxyGroups(regions, safeProxies, features) {
     proxies: [GROUP.DIRECT, GROUP.CATCH_ALL],
   });
 
-  return groups;
+  return groups.map(group => ({
+    ...group,
+    proxies: dedupeProxies(group.proxies),
+  }));
 }
