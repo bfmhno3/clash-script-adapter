@@ -17,6 +17,7 @@ describe('buildGlobalSettings', () => {
     for (const platform of ['windows', 'macos', 'linux', 'android', 'unknown']) {
       const config = buildGlobalSettings(platform);
       assert.equal(config.mode, 'rule', `${platform}: mode`);
+      assert.equal(config.ipv6, true, `${platform}: ipv6`);
       assert.ok(config.profile, `${platform}: profile`);
     }
   });

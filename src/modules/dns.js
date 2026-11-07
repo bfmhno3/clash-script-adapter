@@ -11,10 +11,13 @@ export function buildDnsConfig(logger = null) {
     'use-system-hosts': true,
     'respect-rules': true,           // DNS 连接遵守路由规则（需 proxy-server-nameserver）
     'listen': '0.0.0.0:1053',
-    ipv6: false,                     // 不解析 AAAA（避免 IPv6 泄露）
+    ipv6: true,                      // Resolve AAAA and hand out fake IPv6 addresses
     'default-nameserver': ['223.5.5.5'],  // 用于解析加密 DNS 服务器域名，必须为 IP
     'enhanced-mode': 'fake-ip',
     'fake-ip-range': '198.18.0.1/16',
+    // Keep the fake IPv6 pool outside fc00::/7: the TUN route-exclude-address
+    // drops that range, so a ULA pool would never reach Mihomo.
+    'fake-ip-range6': '2001:db8:9876::1/64',
     'fake-ip-filter-mode': 'blacklist',
     'fake-ip-filter': [
       '*.lan','*.localdomain','*.example','*.invalid','*.localhost','*.test',
@@ -133,6 +136,8 @@ export function buildDnsConfig(logger = null) {
       enhancedMode: config['enhanced-mode'],
       fallbackCount: config.fallback.length,
       fakeIpFilterCount: config['fake-ip-filter'].length,
+      fakeIpRange6: config['fake-ip-range6'],
+      ipv6: config.ipv6,
       nameserverCount: config.nameserver.length,
       proxyServerNameserverCount: config['proxy-server-nameserver'].length,
     });

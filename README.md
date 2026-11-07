@@ -206,6 +206,7 @@ entry becomes the initial choice in Clash clients.
 - ARC 缓存算法（自适应替换，优于 LRU）
 - `fallback-filter` 污染防护（geoip-code: CN）
 - `respect-rules` 确保 DNS 连接遵守路由规则
+- IPv6：内核与 DNS 均开启 IPv6，fake-ip 同时下发 AAAA（`fake-ip-range6: 2001:db8:9876::1/64`，刻意避开 TUN 的 `fc00::/7` 排除段，否则 fake IPv6 无法回到 Mihomo）。
 - `Final` 组默认代理优先：未命中规则的域名会进入 `MATCH -> Final`，默认先走 `Auto Select` / `Manual Select` / 节点，`Direct` 仅保留为手动选项。
 - IPLeak 类页面看到本地运营商出口 IP，通常表示访问连接被直连，不一定单独证明 DNS 泄露；DNS 泄露要看页面列出的 DNS resolver 是否为本地运营商或系统 DNS。
 - Clash Verge Rev 中需确认流量已被客户端接管：full preset 已生成 TUN `dns-hijack` 与 `strict-route`，default/lite 需在客户端侧启用 TUN 或系统代理，并确保 DNS 劫持/覆写 DNS 生效。

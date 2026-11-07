@@ -22,6 +22,7 @@ export function buildGlobalSettings(platform, logger = null) {
     },
     'unified-delay': true,        // 统一延迟计算（消除握手差异）
     'tcp-concurrent': true,       // TCP 并发连接（多 IP 时用最快的）
+    ipv6: true,                   // Enable IPv6 so AAAA-derived connections are usable
     'geodata-mode': true,         // 使用 dat 格式 geoip（非 mmdb）
     'geodata-loader': 'standard', // 标准加载器（非 memconservative）
     'geo-auto-update': true,
@@ -45,6 +46,7 @@ export function buildGlobalSettings(platform, logger = null) {
     logger.info('global-settings-built', {
       findProcessMode: config['find-process-mode'],
       geoAutoUpdate: config['geo-auto-update'],
+      ipv6: config.ipv6,
       platform,
       routingMark: Object.prototype.hasOwnProperty.call(config, 'routing-mark'),
       tcpConcurrent: config['tcp-concurrent'],

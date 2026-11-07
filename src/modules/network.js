@@ -16,7 +16,7 @@ export function buildTunConfig(platform, logger = null) {
     'route-address': [             // 路由全量 IPv4/IPv6 流量进 TUN
       '0.0.0.0/1', '128.0.0.0/1', '::/1', '8000::/1',
     ],
-    'route-exclude-address': ['192.168.0.0/16', 'fc00::/7'],  // 排除局域网
+    'route-exclude-address': ['192.168.0.0/16', 'fc00::/7'],  // 排除局域网；DNS fake-ip-range6 不能落在此段
   };
 
   // Linux/Android: 通过 iptables/nftables 重定向 TCP 连接

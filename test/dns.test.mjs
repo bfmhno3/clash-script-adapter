@@ -14,9 +14,14 @@ describe('buildDnsConfig', () => {
     assert.equal(dns['cache-algorithm'], 'arc');
   });
 
-  it('disables ipv6', () => {
+  it('enables ipv6', () => {
     const dns = buildDnsConfig();
-    assert.equal(dns.ipv6, false);
+    assert.equal(dns.ipv6, true);
+  });
+
+  it('uses a fake-ip-range6 outside the TUN excluded fc00::/7 range', () => {
+    const dns = buildDnsConfig();
+    assert.equal(dns['fake-ip-range6'], '2001:db8:9876::1/64');
   });
 
   it('contains nameserver-policy for DNS splitting', () => {
