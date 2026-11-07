@@ -180,7 +180,9 @@ function removePrunedRegionReferences(proxies, prunedRegionGroupNames) {
 
 // Build the fixed single-node egress groups used by the AI preset.
 // Regional url-test groups and AUTO/MANUAL are omitted on purpose so the
-// selected node can never drift between regions.
+// selected node can never drift between regions. No Direct selector is
+// emitted: DIRECT is a builtin outbound, so a single-option group would only
+// add a switch that can change nothing.
 function buildStableProxyGroups(regions, safeProxies, logger = null) {
   const preferredRegions = ['us', 'sg', 'jp', 'hk'];
   const preferredProxies = [];
@@ -199,22 +201,17 @@ function buildStableProxyGroups(regions, safeProxies, logger = null) {
 
   const groups = [
     {
-      name: GROUP.DIRECT,
-      type: 'select',
-      proxies: ['DIRECT'],
-    },
-    {
       name: GROUP.STABLE,
       type: 'select',
       proxies: fixedProxies,
     },
     {
-      name: GROUP.APPLE,
+      name: GROUP.MICROSOFT,
       type: 'select',
       proxies: [...vendorProxies],
     },
     {
-      name: GROUP.MICROSOFT,
+      name: GROUP.APPLE,
       type: 'select',
       proxies: [...vendorProxies],
     },

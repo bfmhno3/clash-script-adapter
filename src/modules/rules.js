@@ -2,22 +2,22 @@ import { GROUP } from './proxy-groups.js';
 
 // ====== Basic rules (always included) ======
 // Private networks, custom rulesets, and China-direct services.
-function buildBasicRules(proxyTarget) {
+function buildBasicRules(proxyTarget, directTarget = GROUP.DIRECT) {
   return [
-    'GEOSITE,private,' + GROUP.DIRECT,
-    'RULE-SET,private_IP,' + GROUP.DIRECT + ',no-resolve',
-    'RULE-SET,giveup_direct,' + GROUP.DIRECT,
+    'GEOSITE,private,' + directTarget,
+    'RULE-SET,private_IP,' + directTarget + ',no-resolve',
+    'RULE-SET,giveup_direct,' + directTarget,
     'RULE-SET,giveup_proxy,' + proxyTarget,
-    'RULE-SET,Custom_Direct_Domain,' + GROUP.DIRECT,
-    'RULE-SET,Custom_Direct_IP,' + GROUP.DIRECT + ',no-resolve',
+    'RULE-SET,Custom_Direct_Domain,' + directTarget,
+    'RULE-SET,Custom_Direct_IP,' + directTarget + ',no-resolve',
     'RULE-SET,Custom_Proxy_Domain,' + proxyTarget,
     'RULE-SET,Custom_Proxy_IP,' + proxyTarget + ',no-resolve',
-    'GEOSITE,google-cn,' + GROUP.DIRECT,
-    'GEOSITE,category-games@cn,' + GROUP.DIRECT,
-    'RULE-SET,Steam_CDN_Domain,' + GROUP.DIRECT,
-    'RULE-SET,Steam_CDN_IP,' + GROUP.DIRECT + ',no-resolve',
-    'GEOSITE,category-game-platforms-download,' + GROUP.DIRECT,
-    'GEOSITE,category-public-tracker,' + GROUP.DIRECT,
+    'GEOSITE,google-cn,' + directTarget,
+    'GEOSITE,category-games@cn,' + directTarget,
+    'RULE-SET,Steam_CDN_Domain,' + directTarget,
+    'RULE-SET,Steam_CDN_IP,' + directTarget + ',no-resolve',
+    'GEOSITE,category-game-platforms-download,' + directTarget,
+    'GEOSITE,category-public-tracker,' + directTarget,
   ];
 }
 
@@ -84,17 +84,19 @@ const TAIL_RULES = [
 // ====== Stable egress rules (AI preset) ======
 // AI targets come before Apple/Microsoft so those GEOSITE rules cannot
 // capture AI hostnames; everything unmatched still exits the fixed node.
+// Direct targets use the builtin DIRECT outbound: the fixed-egress config
+// ships no dedicated Direct selector, so no rule can be switched away from it.
 function buildStableRules() {
   return [
-    ...buildBasicRules(GROUP.STABLE),
+    ...buildBasicRules(GROUP.STABLE, 'DIRECT'),
     ...buildAiRules(GROUP.STABLE),
     'GEOSITE,apple-intelligence,' + GROUP.STABLE,
     'DOMAIN-SUFFIX,openai.azure.com,' + GROUP.STABLE,
     'DOMAIN-SUFFIX,cognitiveservices.azure.com,' + GROUP.STABLE,
     'GEOSITE,apple,' + GROUP.APPLE,
     'GEOSITE,microsoft,' + GROUP.MICROSOFT,
-    'GEOSITE,cn,' + GROUP.DIRECT,
-    'RULE-SET,cn-ip,' + GROUP.DIRECT + ',no-resolve',
+    'GEOSITE,cn,DIRECT',
+    'RULE-SET,cn-ip,DIRECT,no-resolve',
     'MATCH,' + GROUP.STABLE,
   ];
 }

@@ -198,8 +198,15 @@ describe('buildRules stable egress', () => {
   it('keeps China-direct rules with no-resolve', () => {
     const rules = buildRules(STABLE);
 
-    assert.ok(rules.includes('GEOSITE,cn,' + GROUP.DIRECT));
-    assert.ok(rules.includes('RULE-SET,cn-ip,' + GROUP.DIRECT + ',no-resolve'));
+    assert.ok(rules.includes('GEOSITE,cn,DIRECT'));
+    assert.ok(rules.includes('RULE-SET,cn-ip,DIRECT,no-resolve'));
+  });
+
+  it('targets the builtin DIRECT outbound instead of a Direct group', () => {
+    const rules = buildRules(STABLE);
+
+    assert.ok(!rules.some(rule => rule.includes(GROUP.DIRECT)));
+    assert.ok(rules.some(rule => rule.endsWith(',DIRECT')));
   });
 
   it('drops manual, streaming, gaming, and special rules', () => {

@@ -207,21 +207,21 @@ describe('preset/ai', () => {
     const config = aiMain(mockConfig(['🇭🇰 HK01']), 'windows');
 
     assert.deepEqual(config.rules.slice(-3), [
-      'GEOSITE,cn,' + GROUP.DIRECT,
-      'RULE-SET,cn-ip,' + GROUP.DIRECT + ',no-resolve',
+      'GEOSITE,cn,DIRECT',
+      'RULE-SET,cn-ip,DIRECT,no-resolve',
       'MATCH,' + GROUP.STABLE,
     ]);
   });
 
-  it('builds only the four stable groups', () => {
+  it('builds only the fixed exit, Microsoft, and Apple groups', () => {
     const config = aiMain(mockConfig(['🇭🇰 HK01']), 'windows');
 
     assert.deepEqual(config['proxy-groups'].map(group => group.name), [
-      GROUP.DIRECT,
       GROUP.STABLE,
-      GROUP.APPLE,
       GROUP.MICROSOFT,
+      GROUP.APPLE,
     ]);
+    assert.ok(!config['proxy-groups'].some(group => group.name === GROUP.DIRECT));
   });
 
   it('prefers US then HK nodes for the fixed exit', () => {

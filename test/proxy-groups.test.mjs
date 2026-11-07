@@ -321,15 +321,22 @@ const STABLE_FEATURES = {
 };
 
 describe('buildProxyGroups stable egress', () => {
-  it('builds only DIRECT, STABLE, APPLE, and MICROSOFT groups', () => {
+  it('builds only the fixed exit, Microsoft, and Apple groups in that order', () => {
     const groups = buildProxyGroups(REGIONS_MAP, ['US01', 'HK01', 'HK02'], STABLE_FEATURES);
 
     assert.deepEqual(groups.map(group => group.name), [
-      GROUP.DIRECT,
       GROUP.STABLE,
-      GROUP.APPLE,
       GROUP.MICROSOFT,
+      GROUP.APPLE,
     ]);
+  });
+
+  it('emits no dedicated Direct selector', () => {
+    const groups = buildProxyGroups(REGIONS_MAP, ['US01'], STABLE_FEATURES);
+
+    assert.ok(!groups.some(group => group.name === GROUP.DIRECT));
+    assert.ok(!groups.some(group => group.name === GROUP.AUTO));
+    assert.ok(!groups.some(group => group.name === GROUP.MANUAL));
   });
 
   it('keeps the fixed group as a plain selector without health checks', () => {
