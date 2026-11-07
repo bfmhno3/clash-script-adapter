@@ -2,22 +2,24 @@ import { GROUP } from './proxy-groups.js';
 
 // ====== Basic rules (always included) ======
 // Private networks, custom rulesets, and China-direct services.
-const BASIC_RULES = [
-  'GEOSITE,private,' + GROUP.DIRECT,
-  'RULE-SET,private_IP,' + GROUP.DIRECT + ',no-resolve',
-  'RULE-SET,giveup_direct,' + GROUP.DIRECT,
-  'RULE-SET,giveup_proxy,' + GROUP.MANUAL,
-  'RULE-SET,Custom_Direct_Domain,' + GROUP.DIRECT,
-  'RULE-SET,Custom_Direct_IP,' + GROUP.DIRECT + ',no-resolve',
-  'RULE-SET,Custom_Proxy_Domain,' + GROUP.MANUAL,
-  'RULE-SET,Custom_Proxy_IP,' + GROUP.MANUAL + ',no-resolve',
-  'GEOSITE,google-cn,' + GROUP.DIRECT,
-  'GEOSITE,category-games@cn,' + GROUP.DIRECT,
-  'RULE-SET,Steam_CDN_Domain,' + GROUP.DIRECT,
-  'RULE-SET,Steam_CDN_IP,' + GROUP.DIRECT + ',no-resolve',
-  'GEOSITE,category-game-platforms-download,' + GROUP.DIRECT,
-  'GEOSITE,category-public-tracker,' + GROUP.DIRECT,
-];
+function buildBasicRules(proxyTarget) {
+  return [
+    'GEOSITE,private,' + GROUP.DIRECT,
+    'RULE-SET,private_IP,' + GROUP.DIRECT + ',no-resolve',
+    'RULE-SET,giveup_direct,' + GROUP.DIRECT,
+    'RULE-SET,giveup_proxy,' + proxyTarget,
+    'RULE-SET,Custom_Direct_Domain,' + GROUP.DIRECT,
+    'RULE-SET,Custom_Direct_IP,' + GROUP.DIRECT + ',no-resolve',
+    'RULE-SET,Custom_Proxy_Domain,' + proxyTarget,
+    'RULE-SET,Custom_Proxy_IP,' + proxyTarget + ',no-resolve',
+    'GEOSITE,google-cn,' + GROUP.DIRECT,
+    'GEOSITE,category-games@cn,' + GROUP.DIRECT,
+    'RULE-SET,Steam_CDN_Domain,' + GROUP.DIRECT,
+    'RULE-SET,Steam_CDN_IP,' + GROUP.DIRECT + ',no-resolve',
+    'GEOSITE,category-game-platforms-download,' + GROUP.DIRECT,
+    'GEOSITE,category-public-tracker,' + GROUP.DIRECT,
+  ];
+}
 
 // ====== Streaming rules ======
 const STREAMING_RULES = [
@@ -33,11 +35,13 @@ const STREAMING_RULES = [
 ];
 
 // ====== AI service rules ======
-const AI_RULES = [
-  'GEOSITE,openai,' + GROUP.AI,
-  'GEOSITE,google-gemini,' + GROUP.AI,
-  'GEOSITE,category-ai-!cn,' + GROUP.AI,
-];
+function buildAiRules(proxyTarget) {
+  return [
+    'GEOSITE,openai,' + proxyTarget,
+    'GEOSITE,google-gemini,' + proxyTarget,
+    'GEOSITE,category-ai-!cn,' + proxyTarget,
+  ];
+}
 
 // ====== Social, communication, and common service rules ======
 const SOCIAL_RULES = [
@@ -77,6 +81,24 @@ const TAIL_RULES = [
   'MATCH,' + GROUP.CATCH_ALL,
 ];
 
+// ====== Stable egress rules (AI preset) ======
+// AI targets come before Apple/Microsoft so those GEOSITE rules cannot
+// capture AI hostnames; everything unmatched still exits the fixed node.
+function buildStableRules() {
+  return [
+    ...buildBasicRules(GROUP.STABLE),
+    ...buildAiRules(GROUP.STABLE),
+    'GEOSITE,apple-intelligence,' + GROUP.STABLE,
+    'DOMAIN-SUFFIX,openai.azure.com,' + GROUP.STABLE,
+    'DOMAIN-SUFFIX,cognitiveservices.azure.com,' + GROUP.STABLE,
+    'GEOSITE,apple,' + GROUP.APPLE,
+    'GEOSITE,microsoft,' + GROUP.MICROSOFT,
+    'GEOSITE,cn,' + GROUP.DIRECT,
+    'RULE-SET,cn-ip,' + GROUP.DIRECT + ',no-resolve',
+    'MATCH,' + GROUP.STABLE,
+  ];
+}
+
 /**
  * Build route rules from feature switches.
  * @param {Object} features Feature switches.
@@ -84,10 +106,23 @@ const TAIL_RULES = [
  * @returns {string[]} Rules in Clash format.
  */
 export function buildRules(features, platform, logger = null) {
+  if (features?.rules?.stableEgress) {
+    const rules = buildStableRules();
+    if (logger) {
+      logger.info('rules-built', {
+        mode: 'stable',
+        platform,
+        ruleCount: rules.length,
+        stableEgress: true,
+      });
+    }
+    return rules;
+  }
+
   const rules = [
-    ...BASIC_RULES,
+    ...buildBasicRules(GROUP.MANUAL),
     ...(features.rules.streaming ? STREAMING_RULES : []),
-    ...(features.rules.ai ? AI_RULES : []),
+    ...(features.rules.ai ? buildAiRules(GROUP.AI) : []),
     ...(features.rules.social ? SOCIAL_RULES : []),
     ...(features.rules.gaming ? GAMING_RULES : []),
     ...(features.rules.special ? SPECIAL_RULES : []),
