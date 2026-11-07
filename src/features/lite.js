@@ -1,5 +1,7 @@
 export const LOGGING_ENABLED = false;
 export const LOGGING_LEVEL = 'silent';
+// true: full fallback isolation; false: lean fake-ip DNS.
+export const DNS_STRICT = false;
 
 /**
  * 轻量方案 features 配置
@@ -9,6 +11,9 @@ export const features = {
   tun: false,       // 不包含 TUN
   sniffer: false,   // 不包含嗅探器（减少资源占用）
   ntp: false,       // 不包含 NTP
+  dns: {
+    strict: DNS_STRICT,
+  },
   logging: {
     enabled: LOGGING_ENABLED,
     level: LOGGING_LEVEL,

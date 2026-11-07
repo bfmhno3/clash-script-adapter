@@ -19,6 +19,10 @@ describe('features/full.js', () => {
     assert.equal(fullFeatures.ntp, true);
   });
 
+  it('uses lean DNS by default', () => {
+    assert.equal(fullFeatures.dns.strict, false);
+  });
+
   it('has all 16 regions', () => {
     const all = [
       ...fullFeatures.regions.core,
@@ -60,6 +64,10 @@ describe('features/default.js', () => {
     assert.equal(defaultFeatures.ntp, true);
   });
 
+  it('uses lean DNS by default', () => {
+    assert.equal(defaultFeatures.dns.strict, false);
+  });
+
   it('has 6 core regions only', () => {
     assert.equal(defaultFeatures.regions.core.length, 6);
     assert.equal(defaultFeatures.regions.extended.length, 0);
@@ -94,6 +102,10 @@ describe('features/lite.js', () => {
     assert.equal(liteFeatures.ntp, false);
   });
 
+  it('uses lean DNS by default', () => {
+    assert.equal(liteFeatures.dns.strict, false);
+  });
+
   it('has 3 core regions only', () => {
     assert.equal(liteFeatures.regions.core.length, 3);
     assert.equal(liteFeatures.regions.extended.length, 0);
@@ -120,6 +132,12 @@ describe('features/lite.js', () => {
 });
 
 describe('features consistency', () => {
+  it('all presets expose a boolean dns.strict switch', () => {
+    for (const [name, f] of Object.entries({ full: fullFeatures, default: defaultFeatures, lite: liteFeatures })) {
+      assert.equal(typeof f.dns.strict, 'boolean', `${name}: dns.strict must be boolean`);
+    }
+  });
+
   it('proxyGroups and rules switches are aligned across presets', () => {
     for (const [name, f] of Object.entries({ full: fullFeatures, default: defaultFeatures, lite: liteFeatures })) {
       assert.equal(f.proxyGroups.streaming, f.rules.streaming, `${name}: streaming mismatch`);

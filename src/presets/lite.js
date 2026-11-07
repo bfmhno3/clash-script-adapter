@@ -2,12 +2,12 @@
  * 轻量方案入口（3 精简地区，无 TUN，无 Sniffer）
  * 构建产物：clash_verge_rev_lite.min.js
  */
-import { LOGGING_ENABLED, features } from '../features/lite.js';
+import { DNS_STRICT, LOGGING_ENABLED, features } from '../features/lite.js';
 import { detectPlatform } from '../modules/platform.js';
 import { getRegionProxies } from '../modules/regions.js';
 import { buildProxyGroups } from '../modules/proxy-groups.js';
 import { buildRules } from '../modules/rules.js';
-import { buildDnsConfig } from '../modules/dns.js';
+import { buildDnsConfig, buildStrictDnsConfig } from '../modules/dns.js';
 import { buildGlobalSettings, buildRuleProviders } from '../modules/global-settings.js';
 import { createLogger } from '../modules/logger.js';
 
@@ -27,7 +27,9 @@ function main(config, profilename, rulesetPath) {
   const rules = buildRules(features, platform, logger);
 
   Object.assign(config, buildGlobalSettings(platform, logger));
-  config.dns = buildDnsConfig(logger);
+  config.dns = DNS_STRICT ?
+    buildStrictDnsConfig(logger) :
+    buildDnsConfig(logger);
   config['rule-providers'] = buildRuleProviders(rulesetPath, rules, logger);
   config['proxy-groups'] = buildProxyGroups(regions, safeProxies, features, logger);
   config.rules = rules;

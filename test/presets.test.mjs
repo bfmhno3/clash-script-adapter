@@ -181,6 +181,15 @@ describe('preset/lite', () => {
 });
 
 describe('all presets', () => {
+  it('generates lean DNS by default', () => {
+    const presets = { full: fullMain, default: defaultMain, lite: liteMain };
+    for (const [name, main] of Object.entries(presets)) {
+      const config = main(mockConfig(['HK01']), 'windows');
+      assert.equal(config.dns.fallback, undefined, `${name}: fallback must be absent`);
+      assert.equal(config.dns['respect-rules'], false, `${name}: DNS must stay direct`);
+    }
+  });
+
   it('handle empty proxies without error', () => {
     const emptyConfig = mockConfig([]);
     captureConsole(() => {

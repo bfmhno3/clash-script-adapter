@@ -108,6 +108,7 @@ describe('module logging', () => {
     buildTunConfig('linux', logger);
     buildSnifferConfig(logger);
 
+    assert.equal(findCall(calls, 'dns-built').context.mode, 'lean');
     assert.equal(findCall(calls, 'dns-built').context.fakeIpFilterCount, dns['fake-ip-filter'].length);
     assert.equal(findCall(calls, 'global-settings-built').context.findProcessMode, 'strict');
     assert.equal(findCall(calls, 'global-settings-built').context.routingMark, true);

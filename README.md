@@ -183,6 +183,8 @@ entry becomes the initial choice in Clash clients.
 
 ## DNS 防泄露
 
+默认使用 lean 模式（`features.dns.strict = false`）：
+
 ```
                     +--------------+
                     |  DNS 请求    |
@@ -196,17 +198,30 @@ entry becomes the initial choice in Clash clients.
               +------------+------------+
               |                         |
        +------v-------+         +-------v------+
-       |  国内域名     |         |  境外域名     |
-       |  nameserver   |         |  fallback     |
-       |  223.5.5.5    |         |  dns.google   |
-       |  119.29.29.29 |         |  cloudflare   |
+       |  代理域名     |         |  直连域名     |
+       |  立即返回     |         |  nameserver  |
+       |  fake IP      |         |  阿里/腾讯 DoH |
+       |  交给远端解析  |         |              |
        +--------------+         +--------------+
 ```
 
+- `nameserver` 只保留阿里和腾讯 DoH；代理节点域名由同一组服务器解析。
+- 不配置 `fallback`、`fallback-filter`、`nameserver-policy`、`direct-nameserver`。
+- `respect-rules: false`：DNS 连接直连，不依赖代理可用性。
+- 代理域名不会进入本地解析器，因此没有本地 DNS 泄露，也没有额外的境外 DoH 往返。
+- `fake-ip-filter` 只保留 LAN、NTP、连通性检测和直连服务；Netflix、Xbox、STUN 等代理域名不再强制真实 IP。
+- 上述结论的前提是 `fake-ip-filter` 不包含代理域名。自行添加条目时，必须同时确认该域名会直连，否则会重新引入本地解析。
 - ARC 缓存算法（自适应替换，优于 LRU）
-- `fallback-filter` 污染防护（geoip-code: CN）
-- `respect-rules` 确保 DNS 连接遵守路由规则
 - IPv6：内核与 DNS 均开启 IPv6，fake-ip 同时下发 AAAA（`fake-ip-range6: 2001:db8:9876::1/64`，刻意避开 TUN 的 `fc00::/7` 排除段，否则 fake IPv6 无法回到 Mihomo）。
+
+需要旧的完全隔离方案时，将对应 `src/features/<preset>.js` 顶部的 `DNS_STRICT` 改为 `true`：
+
+```js
+export const DNS_STRICT = true;
+```
+
+`features.dns.strict` 会同步反映该值。strict 模式恢复 `fallback`、`fallback-filter`、`nameserver-policy`、`direct-nameserver` 和 `respect-rules: true`，并把被代理服务重新放回 `fake-ip-filter`。
+
 - `Final` 组默认代理优先：未命中规则的域名会进入 `MATCH -> Final`，默认先走 `Auto Select` / `Manual Select` / 节点，`Direct` 仅保留为手动选项。
 - IPLeak 类页面看到本地运营商出口 IP，通常表示访问连接被直连，不一定单独证明 DNS 泄露；DNS 泄露要看页面列出的 DNS resolver 是否为本地运营商或系统 DNS。
 - Clash Verge Rev 中需确认流量已被客户端接管：full preset 已生成 TUN `dns-hijack` 与 `strict-route`，default/lite 需在客户端侧启用 TUN 或系统代理，并确保 DNS 劫持/覆写 DNS 生效。
