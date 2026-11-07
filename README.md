@@ -100,6 +100,7 @@ clash-script-adapter/
 |   |
 |   +-- modules/                     +--------------------------+
 |       +-- platform.js             |  运行时平台检测            |
+|       +-- proxy-cleaner.js        |  节点清洗 + 结构校验       |
 |       +-- regions.js              |  16 地区正则识别           |
 |       +-- proxy-groups.js         |  代理组构建（40+ 组）      |
 |       +-- rules.js                |  分流规则（GEOSITE/GEOIP） |
@@ -178,6 +179,20 @@ entry becomes the initial choice in Clash clients.
 |:-----------:|:---------------:|:--------------:|
 | HK US JP | CA GB FR DE | Other |
 | SG TW KR | NL TR RU | Home Low |
+
+---
+
+## 节点清洗
+
+所有 preset 在地区分类之前无条件执行节点清洗，不需要额外选项：
+
+- 名称命中信息节点关键字：`剩余流量`、`到期`、`官网`、`订阅`、`客服`、`群组`、`公告`、`邀请`、`推广`、`Telegram 群/客服`、`traffic`、`expire` 等。
+- 缺少或非法 `name`、`type`、`server`、`port`：空值、`0.0.0.0`、`127.0.0.1`、`localhost`、保留示例域名、非 1-65535 端口等。
+- 节点名重复：保留第一个，删除后续条目。
+
+清洗会直接改写 `config.proxies`，随后重新生成所有代理组，因此信息节点不会再出现在客户端节点列表、地区组或服务组中。整个过程不发起网络请求。
+
+`proxy-providers` 的节点由远端提供，脚本运行时无法读取其内容，因此清洗只对 `config.proxies` 生效。`default` 和 `full` 会输出 `proxies-cleaned` 数量统计日志，不包含节点名。
 
 ---
 
@@ -317,6 +332,8 @@ export const LOGGING_LEVEL = 'info';
     +-- features --- 编译开关
     |
     +-- platform --- 平台检测
+    |
+    +-- proxy-cleaner - config.proxies 清洗
     |
     +-- regions ---- 16 地区正则
     |

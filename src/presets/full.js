@@ -4,6 +4,7 @@
  */
 import { DNS_STRICT, LOGGING_ENABLED, features } from '../features/full.js';
 import { detectPlatform } from '../modules/platform.js';
+import { cleanProxies } from '../modules/proxy-cleaner.js';
 import { getRegionProxies } from '../modules/regions.js';
 import { buildProxyGroups } from '../modules/proxy-groups.js';
 import { buildRules } from '../modules/rules.js';
@@ -17,7 +18,11 @@ function main(config, profilename, rulesetPath) {
     createLogger('preset.full', features.logging) :
     null;
   const platform = detectPlatform(profilename, logger);
-  const proxyNames = (config.proxies || []).map(p => p.name);
+  const proxies = cleanProxies(config.proxies, logger);
+  const proxyNames = proxies.map(proxy => proxy.name);
+  if (Array.isArray(config.proxies)) {
+    config.proxies = proxies;
+  }
   const safeProxies = proxyNames.length > 0 ? proxyNames : ['DIRECT'];
   const regions = getRegionProxies(safeProxies, logger);
 

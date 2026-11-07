@@ -6,8 +6,19 @@ import { main as defaultMain } from '../src/presets/default.js';
 import { main as liteMain } from '../src/presets/lite.js';
 import { GROUP } from '../src/modules/proxy-groups.js';
 
+function mockProxy(name) {
+  return {
+    name,
+    type: 'ss',
+    server: '198.51.100.10',
+    port: 443,
+    cipher: 'aes-128-gcm',
+    password: 'secret',
+  };
+}
+
 function mockConfig(proxies = []) {
-  return { proxies: proxies.map(name => ({ name })) };
+  return { proxies: proxies.map(mockProxy) };
 }
 
 function captureConsole(fn) {
@@ -206,5 +217,58 @@ describe('all presets', () => {
     });
     const allGroupNames = config['proxy-groups'].map(g => g.name);
     assert.ok(allGroupNames.length > 0);
+  });
+
+  it('removes informational, invalid, and duplicate proxies in every preset', () => {
+    const presets = { full: fullMain, default: defaultMain, lite: liteMain };
+
+    for (const [name, main] of Object.entries(presets)) {
+      let config;
+      captureConsole(() => {
+        config = main({
+          proxies: [
+            mockProxy('🇭🇰 HK01'),
+            mockProxy('剩余流量：1024 GB'),
+            mockProxy('官网：https://example.com'),
+            mockProxy('🇭🇰 HK01'),
+            { name: 'Broken', type: 'ss', server: '', port: 443 },
+          ],
+        }, 'windows');
+      });
+
+      assert.deepEqual(
+        config.proxies.map(item => item.name),
+        ['🇭🇰 HK01'],
+        `${name}: unexpected cleaned proxies`
+      );
+
+      const groupRefs = config['proxy-groups'].reduce(
+        (refs, group) => [...refs, ...group.proxies],
+        []
+      );
+      assert.ok(!groupRefs.includes('剩余流量：1024 GB'), name);
+      assert.ok(!groupRefs.includes('官网：https://example.com'), name);
+      assert.ok(!groupRefs.includes('Broken'), name);
+    }
+  });
+
+  it('falls back to DIRECT when every proxy is informational', () => {
+    let config;
+    captureConsole(() => {
+      config = defaultMain({ proxies: [mockProxy('剩余流量：1 TB')] }, 'windows');
+    });
+
+    assert.deepEqual(config.proxies, []);
+    const auto = config['proxy-groups'].find(group => group.name === GROUP.AUTO);
+    assert.deepEqual(auto.proxies, ['DIRECT']);
+  });
+
+  it('does not add a proxies field when the input has none', () => {
+    let config;
+    captureConsole(() => {
+      config = liteMain({}, 'windows');
+    });
+
+    assert.equal(config.proxies, undefined);
   });
 });
