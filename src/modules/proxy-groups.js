@@ -3,6 +3,7 @@ export const GROUP = {
   AUTO: '♻️ Auto Select',
   MANUAL: '🚀 Manual Select',
   DIRECT: '🎯 Direct',
+  STABLE: '🔒 Fixed Exit',
   CATCH_ALL: '🐟 Final',
   NON_STD: '🔀 Non-Standard Ports',
   // Regional groups
@@ -177,10 +178,69 @@ function removePrunedRegionReferences(proxies, prunedRegionGroupNames) {
   ));
 }
 
+// Build the fixed single-node egress groups used by the AI preset.
+// Regional url-test groups and AUTO/MANUAL are omitted on purpose so the
+// selected node can never drift between regions.
+function buildStableProxyGroups(regions, safeProxies, logger = null) {
+  const preferredRegions = ['us', 'sg', 'jp', 'hk'];
+  const preferredProxies = [];
+  for (const region of preferredRegions) {
+    for (const proxy of regions[region] || []) {
+      preferredProxies.push(proxy);
+    }
+  }
+
+  const exitProxies = dedupeProxies([
+    ...preferredProxies,
+    ...safeProxies,
+  ]).filter(proxy => proxy && proxy !== 'DIRECT');
+  const fixedProxies = exitProxies.length > 0 ? exitProxies : ['DIRECT'];
+  const vendorProxies = dedupeProxies(['DIRECT', ...fixedProxies]);
+
+  const groups = [
+    {
+      name: GROUP.DIRECT,
+      type: 'select',
+      proxies: ['DIRECT'],
+    },
+    {
+      name: GROUP.STABLE,
+      type: 'select',
+      proxies: fixedProxies,
+    },
+    {
+      name: GROUP.APPLE,
+      type: 'select',
+      proxies: [...vendorProxies],
+    },
+    {
+      name: GROUP.MICROSOFT,
+      type: 'select',
+      proxies: [...vendorProxies],
+    },
+  ];
+
+  if (logger) {
+    logger.info('proxy-groups-built', {
+      fixedProxyCount: fixedProxies.length,
+      groupCount: groups.length,
+      mode: 'stable',
+      preferredProxyCount: preferredProxies.length,
+      safeProxyCount: safeProxies.length,
+    });
+  }
+
+  return groups;
+}
+
 /**
  * Build proxy groups from feature switches.
  */
 export function buildProxyGroups(regions, safeProxies, features, logger = null) {
+  if (features?.proxyGroups?.stableEgress) {
+    return buildStableProxyGroups(regions, safeProxies, logger);
+  }
+
   const pruneEmptyRegions = features?.proxyGroups?.pruneEmptyRegions === true;
   const rawRegionGroups = buildRegionGroups(regions, features);
   const prunedRegionGroupNames = buildPrunedRegionGroupNames(
