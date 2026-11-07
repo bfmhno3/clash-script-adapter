@@ -7,7 +7,7 @@
 
 *通过条件编译 Dead Code Elimination，在构建时裁剪不需要的功能*
 
-*输出三种精简方案，适配从路由器到桌面全场景*
+*输出四种方案：轻量 / 默认 / 完整 / 固定出口 (AI)，适配从路由器到桌面全场景*
 
 [快速开始](#-快速开始) . [方案对比](#-方案对比) . [架构设计](#%EF%B8%8F-架构设计) . [跨平台](#-跨平台适配) . [构建](#-构建系统)
 </div>
@@ -46,7 +46,7 @@
 | NTP | -- |
 | 代理组 | ~12 |
 | 规则集 | 基础 + 流媒体 |
-| 产物 | ~5-7 KB |
+| 产物 | ~28 KB / ~9 KB (min / gzip) |
 
 适用于：路由器、低性能设备
 
@@ -61,7 +61,7 @@
 | NTP | yes |
 | 代理组 | ~25 |
 | 规则集 | 基础 + 流媒体 + AI + 社交 + 游戏 |
-| 产物 | ~8-10 KB |
+| 产物 | ~30 KB / ~9.5 KB (min / gzip) |
 
 适用于：桌面客户端、通用场景
 
@@ -76,9 +76,26 @@
 | NTP | yes |
 | 代理组 | ~40 |
 | 规则集 | 全量 |
-| 产物 | ~14-18 KB |
+| 产物 | ~31 KB / ~10 KB (min / gzip) |
 
 适用于：透明代理、全功能需求
+
+### AI
+
+**固定出口方案**
+
+| 地区 | 无（不生成地区组） |
+|---|---|
+| TUN | yes |
+| Sniffer | yes |
+| NTP | yes |
+| 代理组 | 3 (Fixed Exit, Microsoft, Apple) |
+| 规则集 | 基础 + AI 优先 + 国内直连 |
+| 产物 | ~31 KB / ~10 KB (min / gzip) |
+
+适用于：AI 订阅服务、需要固定单一出口 IP 的场景
+
+产物大小为 v1.3.0 实测；其余方案同。
 
 ---
 
@@ -91,12 +108,16 @@ clash-script-adapter/
 |   +-- presets/                     +--------------------------+
 |   |   +-- default.js              |  入口：组合模块 + features |
 |   |   +-- full.js                 |  ~30 行，纯编排逻辑       |
-|   |   +-- lite.js                 +--------------------------+
+|   |   +-- lite.js                 |  含固定出口 AI 方案       |
+|   |   +-- ai.js
+|   |                               +--------------------------+
 |   |
 |   +-- features/                    +--------------------------+
 |   |   +-- default.js              |  编译开关：功能/地区/规则  |
 |   |   +-- full.js                 |  构建时 DCE 的判定依据     |
-|   |   +-- lite.js                 +--------------------------+
+|   |   +-- lite.js                 |  固定出口：stableEgress   |
+|   |   +-- ai.js
+|   |                               +--------------------------+
 |   |
 |   +-- modules/                     +--------------------------+
 |       +-- platform.js             |  运行时平台检测            |
@@ -110,6 +131,7 @@ clash-script-adapter/
 |                                   +--------------------------+
 |
 +-- dist/                            构建产物 (gitignored)
+|   +-- ai.min.js
 |   +-- default.min.js
 |   +-- full.min.js
 |   +-- lite.min.js
@@ -173,6 +195,21 @@ share the `AI Services` selector, which defaults to `United States` first.
 `YouTube` defaults to `Hong Kong`, then `Japan`, because the first selector
 entry becomes the initial choice in Clash clients.
 
+### 固定出口模式 (ai)
+
+`ai` preset 用 `features.proxyGroups.stableEgress` 取代地区组与 AI 组，只生成三个 `select` 组：
+
+| 组 | 内容 | 用途 |
+|---|---|---|
+| `🔒 Fixed Exit` | 全部原始节点，按 US -> SG -> JP -> HK -> 其余顺序排列 | `MATCH` 与全部 AI 规则；用户在此选定唯一出口节点 |
+| `Ⓜ️ Microsoft Services` | `DIRECT` + 全部原始节点 | 默认直连，可手动切到节点 |
+| `🍎 Apple Services` | `DIRECT` + 全部原始节点 | 默认直连，可手动切到节点 |
+
+- 不生成 `♻️ Auto Select`、`🚀 Manual Select`、地区 `url-test` 组和 `🐟 Final`，因此不存在自动测速导致的出口 IP 跳变。
+- 不生成 `🎯 Direct` 组：直连规则直接指向内置 `DIRECT` 出站，规则无法被切到节点。
+- 没有真实节点时，`🔒 Fixed Exit` 退化为 `['DIRECT']`，配置仍然可用。
+- `ipv6` 与 TUN 透明代理是固定出口的前提，`ai` preset 默认同时开启。
+
 ### 地区覆盖
 
 | 核心 (Core) | 扩展 (Extended) | 特殊 (Special) |
@@ -192,7 +229,7 @@ entry becomes the initial choice in Clash clients.
 
 清洗会直接改写 `config.proxies`，随后重新生成所有代理组，因此信息节点不会再出现在客户端节点列表、地区组或服务组中。整个过程不发起网络请求。
 
-`proxy-providers` 的节点由远端提供，脚本运行时无法读取其内容，因此清洗只对 `config.proxies` 生效。`default` 和 `full` 会输出 `proxies-cleaned` 数量统计日志，不包含节点名。
+`proxy-providers` 的节点由远端提供，脚本运行时无法读取其内容，因此清洗只对 `config.proxies` 生效。`default`、`full` 和 `ai` 会输出 `proxies-cleaned` 数量统计日志，不包含节点名。
 
 ---
 
@@ -237,7 +274,7 @@ export const DNS_STRICT = true;
 
 `features.dns.strict` 会同步反映该值。strict 模式恢复 `fallback`、`fallback-filter`、`nameserver-policy`、`direct-nameserver` 和 `respect-rules: true`，并把被代理服务重新放回 `fake-ip-filter`。
 
-- `Final` 组默认代理优先：未命中规则的域名会进入 `MATCH -> Final`，默认先走 `Auto Select` / `Manual Select` / 节点，`Direct` 仅保留为手动选项。
+- `Final` 组默认代理优先：未命中规则的域名会进入 `MATCH -> Final`，默认先走 `Auto Select` / `Manual Select` / 节点，`Direct` 仅保留为手动选项。`ai` preset 没有 `Final` 组，`MATCH` 直接指向 `🔒 Fixed Exit`，直连规则指向内置 `DIRECT`。
 - IPLeak 类页面看到本地运营商出口 IP，通常表示访问连接被直连，不一定单独证明 DNS 泄露；DNS 泄露要看页面列出的 DNS resolver 是否为本地运营商或系统 DNS。
 - Clash Verge Rev 中需确认流量已被客户端接管：full preset 已生成 TUN `dns-hijack` 与 `strict-route`，default/lite 需在客户端侧启用 TUN 或系统代理，并确保 DNS 劫持/覆写 DNS 生效。
 - 如果 DNS 测试仍显示本地运营商 DNS，先检查 `Final` 是否被手动切到 `Direct`，再检查 TUN、DNS 劫持、系统 DNS 与浏览器安全 DNS/DoH 设置是否绕过了 Mihomo。
@@ -254,7 +291,8 @@ export const DNS_STRICT = true;
 | 社交通讯 | `GEOSITE(category-communication/social-media/github/...)` | `select` |
 | 游戏 | `GEOSITE(steam/category-games)` | `select` |
 | 特殊服务 | `GEOSITE(talkatone/onedrive/bing/paypal/...)` | `select` |
-| 兜底 | `GEOSITE(cn) / GEOIP(cn) / MATCH` | `Direct` / `Final` |
+| 固定出口 (ai) | `GEOSITE(openai/google-gemini/category-ai-!cn/apple-intelligence)` 与 `DOMAIN-SUFFIX(openai.azure.com/cognitiveservices.azure.com)` | `Fixed Exit` |
+| 兜底 | `GEOSITE(cn) / GEOIP(cn) / MATCH` | `Direct` / `Final`（ai: 内置 `DIRECT` / `Fixed Exit`） |
 
 ---
 
@@ -288,9 +326,10 @@ node build.js
 
 ```
 dist/
-+-- default.min.js      # 默认方案 (~8-10 KB)
-+-- full.min.js         # 完整方案 (~14-18 KB)
-+-- lite.min.js         # 轻量方案 (~5-7 KB)
++-- ai.min.js           # 固定出口方案 (~31 KB / ~10 KB gzip)
++-- default.min.js      # 默认方案 (~30 KB / ~9.5 KB gzip)
++-- full.min.js         # 完整方案 (~31 KB / ~10 KB gzip)
++-- lite.min.js         # 轻量方案 (~28 KB / ~9 KB gzip)
 ```
 
 ### 使用
@@ -306,6 +345,7 @@ dist/
 | `lite` | no | `silent` |
 | `default` | yes | `info` |
 | `full` | yes | `info` |
+| `ai` | yes | `info` |
 
 日志等级从低到高为 `trace`、`debug`、`info`、`warn`、`error`，`silent` 和 `off` 会关闭输出。格式为：
 
@@ -327,9 +367,9 @@ export const LOGGING_LEVEL = 'info';
 ## 依赖关系
 
 ```
-  preset (default/full/lite)
+  preset (default/full/lite/ai)
     |
-    +-- features --- 编译开关
+    +-- features --- 编译开关（ai 额外含 stableEgress）
     |
     +-- platform --- 平台检测
     |
