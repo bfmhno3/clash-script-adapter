@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { main as fullMain } from '../src/presets/full.js';
 import { main as defaultMain } from '../src/presets/default.js';
 import { main as liteMain } from '../src/presets/lite.js';
+import { main as aiMain } from '../src/presets/ai.js';
 import { GROUP } from '../src/modules/proxy-groups.js';
 
 function mockProxy(name) {
@@ -191,9 +192,75 @@ describe('preset/lite', () => {
   });
 });
 
+describe('preset/ai', () => {
+  it('returns config with required fields including tun and sniffer', () => {
+    const config = aiMain(mockConfig(['🇭🇰 HK01']), 'windows');
+    assert.ok(config.dns);
+    assert.ok(config['rule-providers']);
+    assert.ok(config['proxy-groups']);
+    assert.ok(config.rules);
+    assert.equal(config.tun.enable, true);
+    assert.equal(config.sniffer.enable, true);
+  });
+
+  it('routes unmatched traffic through the fixed exit group', () => {
+    const config = aiMain(mockConfig(['🇭🇰 HK01']), 'windows');
+
+    assert.deepEqual(config.rules.slice(-3), [
+      'GEOSITE,cn,' + GROUP.DIRECT,
+      'RULE-SET,cn-ip,' + GROUP.DIRECT + ',no-resolve',
+      'MATCH,' + GROUP.STABLE,
+    ]);
+  });
+
+  it('builds only the four stable groups', () => {
+    const config = aiMain(mockConfig(['🇭🇰 HK01']), 'windows');
+
+    assert.deepEqual(config['proxy-groups'].map(group => group.name), [
+      GROUP.DIRECT,
+      GROUP.STABLE,
+      GROUP.APPLE,
+      GROUP.MICROSOFT,
+    ]);
+  });
+
+  it('prefers US then HK nodes for the fixed exit', () => {
+    const config = aiMain(mockConfig(['🇭🇰 HK01', '🇺🇸 US01']), 'windows');
+    const stable = config['proxy-groups'].find(group => group.name === GROUP.STABLE);
+
+    assert.deepEqual(stable.proxies, ['🇺🇸 US01', '🇭🇰 HK01']);
+    assert.ok(!stable.proxies.includes(GROUP.AUTO));
+    assert.ok(!stable.proxies.includes(GROUP.MANUAL));
+  });
+
+  it('defaults Apple and Microsoft to DIRECT with node overrides', () => {
+    const config = aiMain(mockConfig(['🇭🇰 HK01', '🇺🇸 US01']), 'windows');
+    const expected = ['DIRECT', '🇺🇸 US01', '🇭🇰 HK01'];
+
+    assert.deepEqual(
+      config['proxy-groups'].find(group => group.name === GROUP.APPLE).proxies,
+      expected
+    );
+    assert.deepEqual(
+      config['proxy-groups'].find(group => group.name === GROUP.MICROSOFT).proxies,
+      expected
+    );
+  });
+
+  it('falls back to DIRECT without proxies', () => {
+    let config;
+    captureConsole(() => {
+      config = aiMain(mockConfig([]), 'windows');
+    });
+    const stable = config['proxy-groups'].find(group => group.name === GROUP.STABLE);
+
+    assert.deepEqual(stable.proxies, ['DIRECT']);
+  });
+});
+
 describe('all presets', () => {
   it('generates lean DNS by default', () => {
-    const presets = { full: fullMain, default: defaultMain, lite: liteMain };
+    const presets = { full: fullMain, default: defaultMain, lite: liteMain, ai: aiMain };
     for (const [name, main] of Object.entries(presets)) {
       const config = main(mockConfig(['HK01']), 'windows');
       assert.equal(config.dns.fallback, undefined, `${name}: fallback must be absent`);
@@ -207,6 +274,7 @@ describe('all presets', () => {
       assert.doesNotThrow(() => fullMain(emptyConfig, 'unknown'));
       assert.doesNotThrow(() => defaultMain({ proxies: [] }, 'unknown'));
       assert.doesNotThrow(() => liteMain({ proxies: [] }, 'unknown'));
+      assert.doesNotThrow(() => aiMain({ proxies: [] }, 'unknown'));
     });
   });
 
@@ -220,7 +288,7 @@ describe('all presets', () => {
   });
 
   it('removes informational, invalid, and duplicate proxies in every preset', () => {
-    const presets = { full: fullMain, default: defaultMain, lite: liteMain };
+    const presets = { full: fullMain, default: defaultMain, lite: liteMain, ai: aiMain };
 
     for (const [name, main] of Object.entries(presets)) {
       let config;
@@ -264,11 +332,14 @@ describe('all presets', () => {
   });
 
   it('does not add a proxies field when the input has none', () => {
-    let config;
+    let liteConfig;
+    let aiConfig;
     captureConsole(() => {
-      config = liteMain({}, 'windows');
+      liteConfig = liteMain({}, 'windows');
+      aiConfig = aiMain({}, 'windows');
     });
 
-    assert.equal(config.proxies, undefined);
+    assert.equal(liteConfig.proxies, undefined);
+    assert.equal(aiConfig.proxies, undefined);
   });
 });

@@ -172,3 +172,83 @@ describe('buildRules', () => {
     }
   });
 });
+
+const STABLE = {
+  rules: {
+    basic: true, streaming: false, ai: false, social: false,
+    gaming: false, special: false, stableEgress: true,
+  },
+};
+
+const STABLE_PROXY_GROUPS = {
+  regions: { core: [], extended: [], special: [] },
+  proxyGroups: {
+    basic: true, regional: false, streaming: false, ai: false,
+    social: false, gaming: false, special: false, stableEgress: true,
+  },
+};
+
+describe('buildRules stable egress', () => {
+  it('routes everything else through the fixed exit group', () => {
+    const rules = buildRules(STABLE);
+
+    assert.equal(rules[rules.length - 1], 'MATCH,' + GROUP.STABLE);
+  });
+
+  it('keeps China-direct rules with no-resolve', () => {
+    const rules = buildRules(STABLE);
+
+    assert.ok(rules.includes('GEOSITE,cn,' + GROUP.DIRECT));
+    assert.ok(rules.includes('RULE-SET,cn-ip,' + GROUP.DIRECT + ',no-resolve'));
+  });
+
+  it('drops manual, streaming, gaming, and special rules', () => {
+    const rules = buildRules(STABLE);
+
+    for (const group of [GROUP.MANUAL, GROUP.AUTO, GROUP.CATCH_ALL, GROUP.AI]) {
+      assert.ok(!rules.some(rule => rule.endsWith(',' + group)), `unexpected ${group}`);
+    }
+    for (const marker of ['GEOSITE,youtube,', 'GEOSITE,telegram,', 'GEOSITE,steam,', 'GEOSITE,paypal,']) {
+      assert.ok(!rules.some(rule => rule.startsWith(marker)), `unexpected ${marker}`);
+    }
+  });
+
+  it('routes AI hostnames to the fixed exit before Apple and Microsoft', () => {
+    const rules = buildRules(STABLE);
+    const appleIndex = rules.indexOf('GEOSITE,apple,' + GROUP.APPLE);
+    const microsoftIndex = rules.indexOf('GEOSITE,microsoft,' + GROUP.MICROSOFT);
+    const stableFirst = [
+      'GEOSITE,openai,' + GROUP.STABLE,
+      'GEOSITE,category-ai-!cn,' + GROUP.STABLE,
+      'GEOSITE,apple-intelligence,' + GROUP.STABLE,
+      'DOMAIN-SUFFIX,openai.azure.com,' + GROUP.STABLE,
+      'DOMAIN-SUFFIX,cognitiveservices.azure.com,' + GROUP.STABLE,
+    ];
+
+    for (const rule of stableFirst) {
+      const index = rules.indexOf(rule);
+      assert.notEqual(index, -1, `missing ${rule}`);
+      assert.ok(index < appleIndex, `${rule} must precede Apple`);
+      assert.ok(index < microsoftIndex, `${rule} must precede Microsoft`);
+    }
+  });
+
+  it('every rule target exists in the stable group set', () => {
+    const generatedGroupNames = new Set(
+      buildProxyGroups(REGIONS_MAP, ['HK01', 'US01'], STABLE_PROXY_GROUPS)
+        .map(group => group.name)
+    );
+    const rules = buildRules(STABLE, 'windows');
+
+    for (const rule of rules) {
+      const parts = rule.split(',');
+      const groupPart = (parts.length >= 3 ? parts[2] : parts[1])?.trim();
+      if (groupPart) {
+        assert.ok(
+          generatedGroupNames.has(groupPart) || groupPart === 'DIRECT' || groupPart === 'REJECT',
+          `Rule "${rule}" references a group that is not generated`
+        );
+      }
+    }
+  });
+});

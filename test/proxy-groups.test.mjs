@@ -6,7 +6,7 @@ import { GROUP, buildProxyGroups } from '../src/modules/proxy-groups.js';
 describe('GROUP constants', () => {
   it('contains all expected group names', () => {
     const expected = [
-      'AUTO', 'MANUAL', 'DIRECT', 'CATCH_ALL', 'NON_STD',
+      'AUTO', 'MANUAL', 'DIRECT', 'STABLE', 'CATCH_ALL', 'NON_STD',
       'HK', 'US', 'JP', 'SG', 'TW', 'KR', 'CA', 'GB', 'FR', 'DE', 'NL', 'TR', 'RU',
       'OTHER', 'HOME', 'LOW',
       'IM', 'SOCIAL', 'TALKATONE', 'GITHUB', 'CHATGPT', 'COPILOT', 'AI',
@@ -305,5 +305,78 @@ describe('buildProxyGroups', () => {
     const jpGroup = groups.find(g => g.name === GROUP.JP);
 
     assert.deepEqual(jpGroup.proxies, ['DIRECT']);
+  });
+});
+
+const STABLE_FEATURES = {
+  regions: {
+    core: [],
+    extended: [],
+    special: [],
+  },
+  proxyGroups: {
+    basic: true, regional: false, streaming: false, ai: false,
+    social: false, gaming: false, special: false, stableEgress: true,
+  },
+};
+
+describe('buildProxyGroups stable egress', () => {
+  it('builds only DIRECT, STABLE, APPLE, and MICROSOFT groups', () => {
+    const groups = buildProxyGroups(REGIONS_MAP, ['US01', 'HK01', 'HK02'], STABLE_FEATURES);
+
+    assert.deepEqual(groups.map(group => group.name), [
+      GROUP.DIRECT,
+      GROUP.STABLE,
+      GROUP.APPLE,
+      GROUP.MICROSOFT,
+    ]);
+  });
+
+  it('keeps the fixed group as a plain selector without health checks', () => {
+    const groups = buildProxyGroups(REGIONS_MAP, ['US01'], STABLE_FEATURES);
+    const stable = groups.find(group => group.name === GROUP.STABLE);
+
+    assert.equal(stable.type, 'select');
+    assert.equal(stable.url, undefined);
+    assert.equal(stable.interval, undefined);
+    assert.ok(!stable.proxies.includes('DIRECT'));
+    for (const name of [GROUP.AUTO, GROUP.MANUAL, GROUP.CATCH_ALL, GROUP.HK, GROUP.US]) {
+      assert.ok(!stable.proxies.includes(name), `fixed group must not include ${name}`);
+    }
+  });
+
+  it('orders fixed proxies US, SG, JP, HK, then the rest', () => {
+    const groups = buildProxyGroups({
+      hk: ['HK01'],
+      us: ['US01'],
+      jp: ['JP01'],
+      sg: ['SG01'],
+      other: ['OTHER01'],
+    }, ['OTHER01', 'HK01', 'JP01', 'SG01', 'US01'], STABLE_FEATURES);
+    const stable = groups.find(group => group.name === GROUP.STABLE);
+
+    assert.deepEqual(stable.proxies, ['US01', 'SG01', 'JP01', 'HK01', 'OTHER01']);
+  });
+
+  it('puts DIRECT first in Apple and Microsoft groups', () => {
+    const groups = buildProxyGroups({
+      hk: ['HK01'],
+      us: ['US01'],
+    }, ['US01', 'HK01'], STABLE_FEATURES);
+    const expected = ['DIRECT', 'US01', 'HK01'];
+
+    assert.deepEqual(groups.find(group => group.name === GROUP.APPLE).proxies, expected);
+    assert.deepEqual(groups.find(group => group.name === GROUP.MICROSOFT).proxies, expected);
+  });
+
+  it('falls back to DIRECT when no real proxy exists', () => {
+    const groups = buildProxyGroups({
+      hk: ['DIRECT'],
+      us: ['DIRECT'],
+    }, ['DIRECT'], STABLE_FEATURES);
+
+    assert.deepEqual(groups.find(group => group.name === GROUP.STABLE).proxies, ['DIRECT']);
+    assert.deepEqual(groups.find(group => group.name === GROUP.APPLE).proxies, ['DIRECT']);
+    assert.deepEqual(groups.find(group => group.name === GROUP.MICROSOFT).proxies, ['DIRECT']);
   });
 });

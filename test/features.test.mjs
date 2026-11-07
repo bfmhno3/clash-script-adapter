@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { features as fullFeatures } from '../src/features/full.js';
 import { features as defaultFeatures } from '../src/features/default.js';
 import { features as liteFeatures } from '../src/features/lite.js';
+import { features as aiFeatures } from '../src/features/ai.js';
 
 describe('features/full.js', () => {
   it('enables info-level runtime logging', () => {
@@ -131,15 +132,54 @@ describe('features/lite.js', () => {
   });
 });
 
+describe('features/ai.js', () => {
+  it('enables info-level runtime logging', () => {
+    assert.deepEqual(aiFeatures.logging, {
+      enabled: true,
+      level: 'info',
+    });
+  });
+
+  it('enables tun, sniffer, ntp', () => {
+    assert.equal(aiFeatures.tun, true);
+    assert.equal(aiFeatures.sniffer, true);
+    assert.equal(aiFeatures.ntp, true);
+  });
+
+  it('uses lean DNS by default', () => {
+    assert.equal(aiFeatures.dns.strict, false);
+  });
+
+  it('enables stable egress for groups and rules', () => {
+    assert.equal(aiFeatures.proxyGroups.stableEgress, true);
+    assert.equal(aiFeatures.rules.stableEgress, true);
+  });
+
+  it('disables the standalone AI selector and rule switch', () => {
+    assert.equal(aiFeatures.proxyGroups.ai, false);
+    assert.equal(aiFeatures.rules.ai, false);
+  });
+
+  it('disables every other group and rule switch', () => {
+    const offSwitches = [
+      'streaming', 'social', 'gaming', 'special',
+    ];
+    for (const key of offSwitches) {
+      assert.equal(aiFeatures.proxyGroups[key], false, `proxyGroups.${key}`);
+      assert.equal(aiFeatures.rules[key], false, `rules.${key}`);
+    }
+  });
+});
+
 describe('features consistency', () => {
   it('all presets expose a boolean dns.strict switch', () => {
-    for (const [name, f] of Object.entries({ full: fullFeatures, default: defaultFeatures, lite: liteFeatures })) {
+    for (const [name, f] of Object.entries({ full: fullFeatures, default: defaultFeatures, lite: liteFeatures, ai: aiFeatures })) {
       assert.equal(typeof f.dns.strict, 'boolean', `${name}: dns.strict must be boolean`);
     }
   });
 
   it('proxyGroups and rules switches are aligned across presets', () => {
-    for (const [name, f] of Object.entries({ full: fullFeatures, default: defaultFeatures, lite: liteFeatures })) {
+    for (const [name, f] of Object.entries({ full: fullFeatures, default: defaultFeatures, lite: liteFeatures, ai: aiFeatures })) {
       assert.equal(f.proxyGroups.streaming, f.rules.streaming, `${name}: streaming mismatch`);
       assert.equal(f.proxyGroups.ai, f.rules.ai, `${name}: ai mismatch`);
       assert.equal(f.proxyGroups.social, f.rules.social, `${name}: social mismatch`);

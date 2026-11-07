@@ -98,6 +98,48 @@ describe('module logging', () => {
     assert.equal(JSON.stringify(groupsCall.context).includes('US01-secret'), false);
   });
 
+  it('logs stable egress summaries without proxy names', () => {
+    const stableRules = {
+      rules: {
+        basic: true, streaming: false, ai: false, social: false,
+        gaming: false, special: false, stableEgress: true,
+      },
+    };
+    const stableGroups = {
+      regions: { core: [], extended: [], special: [] },
+      proxyGroups: {
+        basic: true, regional: false, streaming: false, ai: false,
+        social: false, gaming: false, special: false, stableEgress: true,
+      },
+    };
+
+    const rulesLogger = createSpyLogger();
+    const rules = buildRules(stableRules, 'windows', rulesLogger.logger);
+    const rulesCall = findCall(rulesLogger.calls, 'rules-built');
+
+    assert.equal(rulesCall.level, 'info');
+    assert.equal(rulesCall.context.mode, 'stable');
+    assert.equal(rulesCall.context.ruleCount, rules.length);
+    assert.equal(rulesCall.context.stableEgress, true);
+
+    const groupLogger = createSpyLogger();
+    const regions = getRegionProxies(['HK01-private', 'US01-secret']);
+    const groups = buildProxyGroups(
+      regions,
+      ['HK01-private', 'US01-secret'],
+      stableGroups,
+      groupLogger.logger
+    );
+    const groupsCall = findCall(groupLogger.calls, 'proxy-groups-built');
+
+    assert.equal(groupsCall.level, 'info');
+    assert.equal(groupsCall.context.mode, 'stable');
+    assert.equal(groupsCall.context.groupCount, groups.length);
+    assert.equal(groupsCall.context.fixedProxyCount, 2);
+    assert.equal(JSON.stringify(groupsCall.context).includes('HK01-private'), false);
+    assert.equal(JSON.stringify(groupsCall.context).includes('US01-secret'), false);
+  });
+
   it('logs dns, global settings, provider, tun, and sniffer summaries', () => {
     const { calls, logger } = createSpyLogger();
     const rules = buildRules(defaultFeatures, 'linux');
