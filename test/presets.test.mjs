@@ -342,4 +342,35 @@ describe('all presets', () => {
     assert.equal(liteConfig.proxies, undefined);
     assert.equal(aiConfig.proxies, undefined);
   });
+
+  it('applies tun, sniffer, and ntp flags to incoming network blocks', () => {
+    const input = () => ({
+      proxies: [],
+      tun: { enable: false },
+      sniffer: { enable: false },
+      ntp: { enable: false },
+    });
+    const configs = {};
+
+    captureConsole(() => {
+      configs.full = fullMain(input(), 'windows');
+      configs.default = defaultMain(input(), 'windows');
+      configs.lite = liteMain(input(), 'windows');
+      configs.ai = aiMain(input(), 'windows');
+    });
+
+    for (const name of ['full', 'ai']) {
+      assert.equal(configs[name].tun.enable, true, `${name}: tun`);
+      assert.equal(configs[name].sniffer.enable, true, `${name}: sniffer`);
+      assert.equal(configs[name].ntp.enable, true, `${name}: ntp`);
+    }
+
+    assert.equal(configs.default.tun, undefined);
+    assert.equal(configs.default.sniffer.enable, true);
+    assert.equal(configs.default.ntp.enable, true);
+
+    assert.equal(configs.lite.tun, undefined);
+    assert.equal(configs.lite.sniffer, undefined);
+    assert.equal(configs.lite.ntp, undefined);
+  });
 });

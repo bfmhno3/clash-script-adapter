@@ -98,3 +98,55 @@ export function buildSnifferConfig(logger = null) {
 
   return config;
 }
+
+/**
+ * Build the embedded NTP client config.
+ * The core uses the offset for protocols that are sensitive to clock skew.
+ */
+export function buildNtpConfig(logger = null) {
+  const config = {
+    enable: true,
+    server: 'time.cloudflare.com',
+    port: 123,
+    interval: 30,
+    'write-to-system': false,
+    'dialer-proxy': 'DIRECT',
+  };
+
+  if (logger) {
+    logger.info('ntp-built', {
+      enable: config.enable,
+      interval: config.interval,
+      server: config.server,
+      writeToSystem: config['write-to-system'],
+    });
+  }
+
+  return config;
+}
+
+/**
+ * Apply the network feature flags to the config.
+ * Disabled features are removed so an incoming subscription cannot re-enable them.
+ */
+export function applyNetworkFeatures(config, features, platform, logger = null) {
+  if (features?.tun) {
+    config.tun = buildTunConfig(platform, logger);
+  } else {
+    delete config.tun;
+  }
+
+  if (features?.sniffer) {
+    config.sniffer = buildSnifferConfig(logger);
+  } else {
+    delete config.sniffer;
+  }
+
+  if (features?.ntp) {
+    config.ntp = buildNtpConfig(logger);
+  } else {
+    delete config.ntp;
+  }
+
+  return config;
+}

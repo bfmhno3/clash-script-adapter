@@ -5,7 +5,7 @@ import { features as defaultFeatures } from '../src/features/default.js';
 import { features as fullFeatures } from '../src/features/full.js';
 import { buildDnsConfig } from '../src/modules/dns.js';
 import { buildGlobalSettings, buildRuleProviders } from '../src/modules/global-settings.js';
-import { buildSnifferConfig, buildTunConfig } from '../src/modules/network.js';
+import { buildNtpConfig, buildSnifferConfig, buildTunConfig } from '../src/modules/network.js';
 import { detectPlatform } from '../src/modules/platform.js';
 import { buildProxyGroups } from '../src/modules/proxy-groups.js';
 import { getRegionProxies } from '../src/modules/regions.js';
@@ -140,7 +140,7 @@ describe('module logging', () => {
     assert.equal(JSON.stringify(groupsCall.context).includes('US01-secret'), false);
   });
 
-  it('logs dns, global settings, provider, tun, and sniffer summaries', () => {
+  it('logs dns, global settings, provider, tun, sniffer, and ntp summaries', () => {
     const { calls, logger } = createSpyLogger();
     const rules = buildRules(defaultFeatures, 'linux');
 
@@ -149,6 +149,7 @@ describe('module logging', () => {
     const providers = buildRuleProviders('./rulesets', rules, logger);
     buildTunConfig('linux', logger);
     buildSnifferConfig(logger);
+    buildNtpConfig(logger);
 
     assert.equal(findCall(calls, 'dns-built').context.mode, 'lean');
     assert.equal(findCall(calls, 'dns-built').context.fakeIpFilterCount, dns['fake-ip-filter'].length);
@@ -157,5 +158,6 @@ describe('module logging', () => {
     assert.equal(findCall(calls, 'rule-providers-built').context.providerCount, Object.keys(providers).length);
     assert.equal(findCall(calls, 'tun-built').context.autoRedirect, true);
     assert.equal(findCall(calls, 'sniffer-built').context.sniffProtocolCount, 3);
+    assert.equal(findCall(calls, 'ntp-built').context.server, 'time.cloudflare.com');
   });
 });

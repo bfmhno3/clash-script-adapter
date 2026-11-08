@@ -10,7 +10,7 @@ import { buildProxyGroups } from '../modules/proxy-groups.js';
 import { buildRules } from '../modules/rules.js';
 import { buildDnsConfig, buildStrictDnsConfig } from '../modules/dns.js';
 import { buildGlobalSettings, buildRuleProviders } from '../modules/global-settings.js';
-import { buildTunConfig, buildSnifferConfig } from '../modules/network.js';
+import { applyNetworkFeatures } from '../modules/network.js';
 import { createLogger } from '../modules/logger.js';
 
 function main(config, profilename, rulesetPath) {
@@ -39,17 +39,17 @@ function main(config, profilename, rulesetPath) {
   config['rule-providers'] = buildRuleProviders(rulesetPath, rules, logger);
   config['proxy-groups'] = buildProxyGroups(regions, safeProxies, features, logger);
   config.rules = rules;
-  config.tun = buildTunConfig(platform, logger);
-  config.sniffer = buildSnifferConfig(logger);
+  applyNetworkFeatures(config, features, platform, logger);
 
   if (logger) {
     logger.info('config-generated', {
       groupCount: config['proxy-groups'].length,
       platform,
       proxyCount: proxyNames.length,
+      ntp: features.ntp,
       ruleCount: config.rules.length,
-      sniffer: true,
-      tun: true,
+      sniffer: features.sniffer,
+      tun: features.tun,
     });
     logger.debug('feature-summary', {
       ai: features.proxyGroups.ai,

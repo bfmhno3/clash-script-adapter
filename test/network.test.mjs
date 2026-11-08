@@ -1,7 +1,12 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { buildTunConfig, buildSnifferConfig } from '../src/modules/network.js';
+import {
+  applyNetworkFeatures,
+  buildNtpConfig,
+  buildSnifferConfig,
+  buildTunConfig,
+} from '../src/modules/network.js';
 
 describe('buildTunConfig', () => {
   it('all platforms have common fields', () => {
@@ -69,5 +74,56 @@ describe('buildSnifferConfig', () => {
     const sniffer = buildSnifferConfig();
     assert.ok(Array.isArray(sniffer['skip-domain']));
     assert.ok(sniffer['skip-domain'].length > 0);
+  });
+});
+
+describe('buildNtpConfig', () => {
+  it('builds an enabled NTP client that does not write the system clock', () => {
+    const ntp = buildNtpConfig();
+    assert.equal(ntp.enable, true);
+    assert.equal(ntp.server, 'time.cloudflare.com');
+    assert.equal(ntp.port, 123);
+    assert.equal(ntp.interval, 30);
+    assert.equal(ntp['write-to-system'], false);
+    assert.equal(ntp['dialer-proxy'], 'DIRECT');
+  });
+});
+
+describe('applyNetworkFeatures', () => {
+  it('adds enabled network blocks and replaces incoming values', () => {
+    const config = {
+      tun: { enable: false },
+      sniffer: { enable: false },
+      ntp: { enable: false },
+    };
+
+    applyNetworkFeatures(
+      config,
+      { tun: true, sniffer: true, ntp: true },
+      'linux'
+    );
+
+    assert.equal(config.tun.enable, true);
+    assert.equal(config.tun['auto-redirect'], true);
+    assert.equal(config.sniffer.enable, true);
+    assert.equal(config.ntp.enable, true);
+  });
+
+  it('removes disabled network blocks from the incoming config', () => {
+    const config = {
+      tun: { enable: true },
+      sniffer: { enable: true },
+      ntp: { enable: true },
+    };
+
+    applyNetworkFeatures(
+      config,
+      { tun: false, sniffer: false, ntp: false },
+      'linux'
+    );
+
+    assert.equal(config.tun, undefined);
+    assert.equal(config.sniffer, undefined);
+    assert.equal(config.ntp, undefined);
   });
 });
