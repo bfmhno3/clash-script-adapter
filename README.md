@@ -1,344 +1,190 @@
 # Clash Script Adapter
 
-<img src="https://img.shields.io/badge/mihomo-Meta%20CubeX-0A0A0A?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTEyIDJMMyA3djEwbDkgNSA5LTVIN0wxMiAyeiIgZmlsbD0iIzAwZiIvPjwvc3ZnPg==" alt="mihomo"><img src="https://img.shields.io/badge/Clash%20Verge%20Rev-Supported-6366f1?style=for-the-badge&logo=ghost&logoColor=white" alt="Clash Verge Rev"><img src="https://img.shields.io/badge/JavaScript-ES2020-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black" alt="JavaScript"><img src="https://img.shields.io/badge/License-MIT-blue?style=for-the-badge" alt="License"><img src="https://img.shields.io/badge/Build-esbuild%20%2B%20Terser-FFCF00?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTIgMTJoMjBNMTIgMnYyME0yIDEyaDIwTDEyIDJsMTAgMTAtMTAgMTB6IiBmaWxsPSJub25lIiBzdHJva2U9IiNGRkNGMDAiIHN0cm9rZS13aWR0aD0iMiIvPjwvc3ZnPg==" alt="Build">
+把 Clash/Mihomo 订阅配置转换成可直接粘贴到 Clash Verge Rev 的全局扩展脚本。四个预设共用一套模块；构建时把 preset 的 `features` 读取替换为字面量，再由 esbuild 打包、Terser 删除未启用分支。
 
-<div align="center">
-**一套模块化、可编译的 Clash/Mihomo 脚本配置生成器**
+<p align="center">
+  <img src="./assets/readme/hero.svg" width="100%" alt="一份订阅配置生成 lite、default、full 和 ai 四个全局扩展脚本">
+</p>
 
-*通过条件编译 Dead Code Elimination，在构建时裁剪不需要的功能*
+[![Latest release](https://img.shields.io/github/v/release/bfmhno3/clash-script-adapter)](https://github.com/bfmhno3/clash-script-adapter/releases)
 
-*输出四种方案：轻量 / 默认 / 完整 / 固定出口 (AI)，适配从路由器到桌面全场景*
+`npm test` 运行测试套件，`npm run build` 生成四份 `dist/*.min.js`。
 
-[快速开始](#-快速开始) . [方案对比](#-方案对比) . [架构设计](#%EF%B8%8F-架构设计) . [跨平台](#-跨平台适配) . [构建](#-构建系统)
-</div>
+- 产物：`lite` / `default` / `full` / `ai`，24-30 KB，gzip 7.9-9.6 KB
+- 运行环境：Clash Verge Rev 的全局扩展脚本（`boa_engine`），不使用网络或文件 API；其他客户端未验证
+- 输入：订阅配置对象；输出：改写后的配置对象
 
----
+<p align="center">
+  <img src="./assets/readme/section-quickstart.svg" width="100%" alt="Section 01: download one preset, paste it into Clash Verge Rev">
+</p>
 
-## Highlights
+## 快速开始
 
-```
-   +---------------------------------------------------------------------+
-   |                                                                     |
-   |    不是维护多份代码，而是一套模块 + 一组配置参数                         |
-   |                                                                     |
-   |    类比 C/C++ 条件编译：                                              |
-   |      if (features.tun) { ... }                                      |
-   |      ----------------                                               |
-   |      esbuild bundle --> terser DCE --> if(false){} 被移除             |
-   |                                                                     |
-   |    最终产物：零冗余，纯运行时代码                                       |
-   |                                                                     |
-   +---------------------------------------------------------------------+
+直接使用发布产物：
+
+```bash
+curl -L -o lite.min.js https://github.com/bfmhno3/clash-script-adapter/releases/latest/download/lite.min.js
 ```
 
----
+Release 资产可能落后于源码；需要本文档描述的最新 flag / NTP 行为时，从源码构建。
+
+1. 把 `lite` 替换为需要的预设：`default`、`full` 或 `ai`。
+2. 打开 Clash Verge Rev 的全局扩展脚本，粘贴 `*.min.js` 全文，保存并重新应用配置。
+3. 在代理组中选择节点。未命中规则的流量默认进入 `♻️ Auto Select`；`ai` 在 `🔒 Fixed Exit` 中选择唯一出口。
+
+`lite` 不含 TUN 和 Sniffer。需要透明代理时使用 `full` 或 `ai`。首次使用建议从 `default` 开始。
+
+### 从源码构建
+
+需要 Node.js（`mise.toml` 固定为 LTS）和 npm：
+
+```bash
+mise install
+npm ci
+npm run build
+```
+
+不使用 mise 时，安装 Node.js LTS 后执行 `npm ci && npm run build`。构建脚本遍历 `src/presets/*.js`，读取对应的 `src/features/<preset>.js`，替换 features 读取后打包，输出到 `dist/`。
+
+### 验证
+
+```bash
+npm test
+npm run check
+```
+
+`npm test` 运行测试套件；`npm run check` 额外构建四个预设。
+
+<p align="center">
+  <img src="./assets/readme/section-presets.svg" width="100%" alt="Section 02: choose a preset by device and egress constraints">
+</p>
 
 ## 方案对比
 
-### Lite
+| 预设 | 地区组 | TUN | Sniffer | NTP | 代理组 | 规则条数 | 产物 (min / gzip) | 适用场景 |
+|---|---|---:|---:|---:|---:|---:|---|---|
+| `lite` | 3 (HK, US, JP) | - | - | - | 18 | 26 | ~25 KB / 7.9 KB | 路由器、低性能设备 |
+| `default` | 6 (HK, US, JP, SG, TW, KR) | - | yes | yes | 34 | 46 | ~29 KB / 9.2 KB | 桌面客户端、通用场景 |
+| `full` | 16 | yes | yes | yes | 32-48 | 47 | ~30 KB / 9.6 KB | 透明代理、全量规则 |
+| `ai` | 无 | yes | yes | yes | 3 | 25 | ~25 KB / 8.0 KB | 固定单一出口 IP |
 
-**轻量方案**
+`full` 的代理组数量随可用地区节点裁剪；没有真实节点的地区组会被移除。产物大小为当前源码的本地构建实测。
 
-| 地区 | 3 (HK, US, JP) |
-|---|---|
-| TUN | -- |
-| Sniffer | -- |
-| NTP | -- |
-| 代理组 | ~12 |
-| 规则集 | 基础 + 流媒体 |
-| 产物 | ~28 KB / ~9 KB (min / gzip) |
+## 为什么用这个
 
-适用于：路由器、低性能设备
+- **改动集中在一处。** 地区正则、规则顺序、节点清洗、DNS 和平台参数都在 `src/modules/`；改一次，四个预设都受影响。手写多份全局脚本时，这些逻辑需要逐份同步。
+- **一套源码，四个产物。** `src/presets/*.js` 只负责编排，`src/features/*.js` 决定生成哪些地区组、代理组和规则。构建时把 preset 的 `features` 读取替换为字面量，Terser 删除未启用的规则和组；源码仍保留统一模块，测试可以直接切换 flags。
+- **输出是单文件脚本。** 不需要额外服务或运行时依赖；粘贴到客户端即可，脚本本身不发起网络请求。
+- **预设对应不同约束。** `lite` 面向低资源设备，`default` 面向桌面，`full` 打开 TUN 和全部地区，`ai` 用固定出口避免自动测速造成的 IP 跳变。
+- **节点清洗和平台检测内置。** 每个预设都会剔除信息节点、非法节点和重名节点，并按运行平台生成 TUN 参数。
+- **代价。** 这是生成器，不是 GUI；修改预设后需要用 Node.js 重新构建。少量共享常量仍会留在产物中。
 
-### Default
+不适合以下场景：
 
-**默认方案**
+- 只需要一份静态 YAML，不需要脚本生成。
+- 客户端不支持全局扩展脚本。
+- 需要清洗 `proxy-providers` 中的节点。远端 provider 的内容在脚本运行时不可读，清洗只作用于 `config.proxies`。
 
-| 地区 | 6 (HK,US,JP,SG,TW,KR) |
-|---|---|
-| TUN | -- |
-| Sniffer | yes |
-| NTP | yes |
-| 代理组 | ~25 |
-| 规则集 | 基础 + 流媒体 + AI + 社交 + 游戏 |
-| 产物 | ~30 KB / ~9.5 KB (min / gzip) |
+<p align="center">
+  <img src="./assets/readme/section-mechanism.svg" width="100%" alt="Section 03: clean nodes, build lean DNS, and adapt platform settings">
+</p>
 
-适用于：桌面客户端、通用场景
+## 它做了什么
 
-### Full
+### 节点清洗
 
-**完整方案**
+所有预设都会在地区分类前处理 `config.proxies`：
 
-| 地区 | 16 (全部) |
-|---|---|
-| TUN | yes |
-| Sniffer | yes |
-| NTP | yes |
-| 代理组 | ~40 |
-| 规则集 | 全量 |
-| 产物 | ~31 KB / ~10 KB (min / gzip) |
+- 名称命中 `剩余流量`、`到期`、`官网`、`客服`、`公告`、`traffic`、`expire` 等信息节点关键字。
+- `name`、`type`、`server`、`port` 缺失或非法，包括 `0.0.0.0`、`127.0.0.1`、`localhost`、示例域名、非 1-65535 端口。
+- 节点名重复时保留第一个。
 
-适用于：透明代理、全功能需求
+清洗就地改写 `config.proxies`，随后重新生成代理组。`default`、`full`、`ai` 会输出 `proxies-cleaned` 统计日志，不包含节点名。
 
-### AI
+### DNS
 
-**固定出口方案**
+默认使用 lean fake-ip 模式：
 
-| 地区 | 无（不生成地区组） |
-|---|---|
-| TUN | yes |
-| Sniffer | yes |
-| NTP | yes |
-| 代理组 | 3 (Fixed Exit, Microsoft, Apple) |
-| 规则集 | 基础 + AI 优先 + 国内直连 |
-| 产物 | ~31 KB / ~10 KB (min / gzip) |
+- `nameserver` 只保留阿里和腾讯 DoH，`proxy-server-nameserver` 使用同一组服务器。
+- 代理域名立即返回 fake IP，交给远端解析；直连域名走国内 DoH。
+- 不配置 `fallback`、`fallback-filter`、`nameserver-policy`、`direct-nameserver`，`respect-rules` 为 `false`。
+- `cache-algorithm` 为 `arc`；IPv4 fake-ip 为 `198.18.0.1/16`，IPv6 fake-ip 为 `2001:db8:9876::1/64`。
+- `fake-ip-filter` 只保留 LAN、NTP、连通性检测和直连服务。加入代理域名会重新引入本地解析。
 
-适用于：AI 订阅服务、需要固定单一出口 IP 的场景
-
-产物大小为 v1.3.0 实测；其余方案同。
-
----
-
-## 架构设计
-
-```
-clash-script-adapter/
-|
-+-- src/
-|   +-- presets/                     +--------------------------+
-|   |   +-- default.js              |  入口：组合模块 + features |
-|   |   +-- full.js                 |  ~30 行，纯编排逻辑       |
-|   |   +-- lite.js                 |  含固定出口 AI 方案       |
-|   |   +-- ai.js
-|   |                               +--------------------------+
-|   |
-|   +-- features/                    +--------------------------+
-|   |   +-- default.js              |  编译开关：功能/地区/规则  |
-|   |   +-- full.js                 |  构建时 DCE 的判定依据     |
-|   |   +-- lite.js                 |  固定出口：stableEgress   |
-|   |   +-- ai.js
-|   |                               +--------------------------+
-|   |
-|   +-- modules/                     +--------------------------+
-|       +-- platform.js             |  运行时平台检测            |
-|       +-- proxy-cleaner.js        |  节点清洗 + 结构校验       |
-|       +-- regions.js              |  16 地区正则识别           |
-|       +-- proxy-groups.js         |  代理组构建（40+ 组）      |
-|       +-- rules.js                |  分流规则（GEOSITE/GEOIP） |
-|       +-- dns.js                  |  DNS 防泄露配置            |
-|       +-- global-settings.js      |  全局设置 + 规则提供者     |
-|       +-- network.js              |  TUN + Sniffer 配置       |
-|                                   +--------------------------+
-|
-+-- dist/                            构建产物 (gitignored)
-|   +-- ai.min.js
-|   +-- default.min.js
-|   +-- full.min.js
-|   +-- lite.min.js
-|
-+-- build.js                         esbuild bundle + terser minify
-```
-
-### 条件编译链路
-
-```
-  features.tun = false     (default preset)
-       |
-       v
-  if (features.tun) {      --+
-    config.tun = build()   --+  esbuild 将常量内联
-  }                        --+
-       |
-       v
-  if (false) {             --+
-    config.tun = build()   --+  terser 识别为 dead code
-  }                        --+
-       |
-       v
-  [removed]                -- 产物中不存在此代码块
-```
-
----
-
-## 跨平台适配
-
-运行时自动检测平台，应用差异化配置：
-
-| 配置项 | Windows | macOS | Linux | Android |
-|--------|:-------:|:-----:|:-----:|:-------:|
-| `strict-route` | yes | -- | -- | -- |
-| `auto-redirect` | -- | -- | yes | yes |
-| `gso` / `gso-max-size` | -- | -- | yes | -- |
-| `include-android-user` | -- | -- | -- | yes |
-| `routing-mark` | -- | -- | yes | -- |
-| `find-process-mode` | strict | strict | strict | off |
-| `disable-keep-alive` | yes | yes | yes | yes |
-
-**降级策略**：mihomo 原生环境（路由器等）无 `navigator` 对象时，从 `profilename` 中提取平台关键词（`_linux`、`_android`）作为 fallback。
-
----
-
-## 代理组策略
-
-```
-+-------------------------------------------------------------+
-|                  Proxy Group Type Selection                 |
-+-------------------+-----------------------------------------+
-|   url-test        |  Regional groups and Auto Select        |
-|   select          |  Manual Select, Direct, AI, streaming   |
-|                   |  and special service groups             |
-+-------------------+-----------------------------------------+
-```
-
-All user-visible proxy group names are generated in English. AI-related rules
-share the `AI Services` selector, which defaults to `United States` first.
-`YouTube` defaults to `Hong Kong`, then `Japan`, because the first selector
-entry becomes the initial choice in Clash clients.
-
-### 固定出口模式 (ai)
-
-`ai` preset 用 `features.proxyGroups.stableEgress` 取代地区组与 AI 组，只生成三个 `select` 组：
-
-| 组 | 内容 | 用途 |
-|---|---|---|
-| `🔒 Fixed Exit` | 全部原始节点，按 US -> SG -> JP -> HK -> 其余顺序排列 | `MATCH` 与全部 AI 规则；用户在此选定唯一出口节点 |
-| `Ⓜ️ Microsoft Services` | `DIRECT` + 全部原始节点 | 默认直连，可手动切到节点 |
-| `🍎 Apple Services` | `DIRECT` + 全部原始节点 | 默认直连，可手动切到节点 |
-
-- 不生成 `♻️ Auto Select`、`🚀 Manual Select`、地区 `url-test` 组和 `🐟 Final`，因此不存在自动测速导致的出口 IP 跳变。
-- 不生成 `🎯 Direct` 组：直连规则直接指向内置 `DIRECT` 出站，规则无法被切到节点。
-- 没有真实节点时，`🔒 Fixed Exit` 退化为 `['DIRECT']`，配置仍然可用。
-- `ipv6` 与 TUN 透明代理是固定出口的前提，`ai` preset 默认同时开启。
-
-### 地区覆盖
-
-| 核心 (Core) | 扩展 (Extended) | 特殊 (Special) |
-|:-----------:|:---------------:|:--------------:|
-| HK US JP | CA GB FR DE | Other |
-| SG TW KR | NL TR RU | Home Low |
-
----
-
-## 节点清洗
-
-所有 preset 在地区分类之前无条件执行节点清洗，不需要额外选项：
-
-- 名称命中信息节点关键字：`剩余流量`、`到期`、`官网`、`订阅`、`客服`、`群组`、`公告`、`邀请`、`推广`、`Telegram 群/客服`、`traffic`、`expire` 等。
-- 缺少或非法 `name`、`type`、`server`、`port`：空值、`0.0.0.0`、`127.0.0.1`、`localhost`、保留示例域名、非 1-65535 端口等。
-- 节点名重复：保留第一个，删除后续条目。
-
-清洗会直接改写 `config.proxies`，随后重新生成所有代理组，因此信息节点不会再出现在客户端节点列表、地区组或服务组中。整个过程不发起网络请求。
-
-`proxy-providers` 的节点由远端提供，脚本运行时无法读取其内容，因此清洗只对 `config.proxies` 生效。`default`、`full` 和 `ai` 会输出 `proxies-cleaned` 数量统计日志，不包含节点名。
-
----
-
-## DNS 防泄露
-
-默认使用 lean 模式（`features.dns.strict = false`）：
-
-```
-                    +--------------+
-                    |  DNS 请求    |
-                    +------+-------+
-                           |
-                    +------v-------+
-                    |  fake-ip     |  增强模式，防止真实 IP 暴露
-                    |  模式        |
-                    +------+-------+
-                           |
-              +------------+------------+
-              |                         |
-       +------v-------+         +-------v------+
-       |  代理域名     |         |  直连域名     |
-       |  立即返回     |         |  nameserver  |
-       |  fake IP      |         |  阿里/腾讯 DoH |
-       |  交给远端解析  |         |              |
-       +--------------+         +--------------+
-```
-
-- `nameserver` 只保留阿里和腾讯 DoH；代理节点域名由同一组服务器解析。
-- 不配置 `fallback`、`fallback-filter`、`nameserver-policy`、`direct-nameserver`。
-- `respect-rules: false`：DNS 连接直连，不依赖代理可用性。
-- 代理域名不会进入本地解析器，因此没有本地 DNS 泄露，也没有额外的境外 DoH 往返。
-- `fake-ip-filter` 只保留 LAN、NTP、连通性检测和直连服务；Netflix、Xbox、STUN 等代理域名不再强制真实 IP。
-- 上述结论的前提是 `fake-ip-filter` 不包含代理域名。自行添加条目时，必须同时确认该域名会直连，否则会重新引入本地解析。
-- ARC 缓存算法（自适应替换，优于 LRU）
-- IPv6：内核与 DNS 均开启 IPv6，fake-ip 同时下发 AAAA（`fake-ip-range6: 2001:db8:9876::1/64`，刻意避开 TUN 的 `fc00::/7` 排除段，否则 fake IPv6 无法回到 Mihomo）。
-
-需要旧的完全隔离方案时，将对应 `src/features/<preset>.js` 顶部的 `DNS_STRICT` 改为 `true`：
+需要旧的完全隔离方案时，把对应 `src/features/<preset>.js` 顶部的 `DNS_STRICT` 改为 `true`：
 
 ```js
 export const DNS_STRICT = true;
 ```
 
-`features.dns.strict` 会同步反映该值。strict 模式恢复 `fallback`、`fallback-filter`、`nameserver-policy`、`direct-nameserver` 和 `respect-rules: true`，并把被代理服务重新放回 `fake-ip-filter`。
+strict 模式恢复 `fallback`、`fallback-filter`、`nameserver-policy`、`direct-nameserver` 和 `respect-rules: true`。
 
-- `Final` 组默认代理优先：未命中规则的域名会进入 `MATCH -> Final`，默认先走 `Auto Select` / `Manual Select` / 节点，`Direct` 仅保留为手动选项。`ai` preset 没有 `Final` 组，`MATCH` 直接指向 `🔒 Fixed Exit`，直连规则指向内置 `DIRECT`。
-- IPLeak 类页面看到本地运营商出口 IP，通常表示访问连接被直连，不一定单独证明 DNS 泄露；DNS 泄露要看页面列出的 DNS resolver 是否为本地运营商或系统 DNS。
-- Clash Verge Rev 中需确认流量已被客户端接管：full preset 已生成 TUN `dns-hijack` 与 `strict-route`，default/lite 需在客户端侧启用 TUN 或系统代理，并确保 DNS 劫持/覆写 DNS 生效。
-- 如果 DNS 测试仍显示本地运营商 DNS，先检查 `Final` 是否被手动切到 `Direct`，再检查 TUN、DNS 劫持、系统 DNS 与浏览器安全 DNS/DoH 设置是否绕过了 Mihomo。
+### NTP
 
----
+`default`、`full`、`ai` 写入以下的 `ntp` 配置，`lite` 会删除该字段：
 
-## 规则集
+| 字段 | 值 |
+|---|---|
+| `enable` | `true` |
+| `server` | `time.cloudflare.com` |
+| `port` | `123` |
+| `interval` | `30` |
+| `dialer-proxy` | `DIRECT` |
+| `write-to-system` | `false` |
 
-| 类别 | 规则类型 | 策略组 |
-|------|---------|--------|
-| 基础 | `GEOSITE(private)` / `GEOIP(private)` / `RULE-SET(Custom_*)` | `Direct` |
-| 流媒体 | `GEOSITE(youtube/netflix/disney/hbo/spotify/...)` | `select` |
-| AI 服务 | `GEOSITE(openai/google-gemini/category-ai-!cn)` | `AI Services` |
-| 社交通讯 | `GEOSITE(category-communication/social-media/github/...)` | `select` |
-| 游戏 | `GEOSITE(steam/category-games)` | `select` |
-| 特殊服务 | `GEOSITE(talkatone/onedrive/bing/paypal/...)` | `select` |
-| 固定出口 (ai) | `GEOSITE(openai/google-gemini/category-ai-!cn/apple-intelligence)` 与 `DOMAIN-SUFFIX(openai.azure.com/cognitiveservices.azure.com)` | `Fixed Exit` |
-| 兜底 | `GEOSITE(cn) / GEOIP(cn) / MATCH` | `Direct` / `Final`（ai: 内置 `DIRECT` / `Fixed Exit`） |
+`interval` 的单位是分钟。NTP 只给内核协议提供时钟偏移，`write-to-system: false` 不修改系统时间。
 
----
+### 跨平台参数
 
-## 快速开始
+运行时通过 `navigator` 检测平台；mihomo 原生环境没有 `navigator` 时，从 `profilename` 中的 `_linux`、`_android`、`_win`、`_mac` 推断。
 
-### 安装依赖
+| 配置项 | Windows | macOS | Linux | Android |
+|---|:---:|:---:|:---:|:---:|
+| `auto-redirect` | - | - | yes | yes |
+| `gso` / `gso-max-size` | - | - | yes | - |
+| `include-android-user` | - | - | - | yes |
+| `routing-mark` | - | - | yes | - |
+| `find-process-mode` | strict | strict | strict | off |
+| `disable-keep-alive` | yes | yes | yes | yes |
+| `strict-route` | yes | yes | yes | yes |
 
-本项目使用 [mise](https://mise.jdx.dev/) 管理工具链：
+`strict-route` 由 TUN 配置统一设置，因此只在 `full` 和 `ai` 产物中出现。平台无法识别时，`routing-mark` 也会写入。
 
-```bash
-mise install
-```
+### 代理组
 
-或手动安装 Node.js + npm 全局包：
+地区组和 `♻️ Auto Select` 使用 `url-test`；`🚀 Manual Select`、`🎯 Direct`、AI、流媒体和特殊服务组使用 `select`。
 
-```bash
-npm install -g esbuild terser
-```
+`🤖 AI Services` 的首选项依次为 US、SG、JP、HK。`📹 YouTube` 的首选项依次为 HK、JP、SG、TW，因为 Clash 客户端会把 select 组的第一项作为初始选择。
 
-### 构建
+`ai` 预设只生成三个 `select` 组：
 
-```bash
-# 使用 mise
-mise run build
+| 组 | 内容 | 用途 |
+|---|---|---|
+| `🔒 Fixed Exit` | 全部原始节点，按 US、SG、JP、HK、其余排列 | `MATCH` 与 AI 规则；用户在此选定唯一出口 |
+| `Ⓜ️ Microsoft Services` | `DIRECT` + 全部原始节点 | 默认直连，可手动切换 |
+| `🍎 Apple Services` | `DIRECT` + 全部原始节点 | 默认直连，可手动切换 |
 
-# 或直接运行
-node build.js
-```
+`ai` 不生成 `♻️ Auto Select`、`🚀 Manual Select`、地区 `url-test` 组、`🐟 Final` 和 `🎯 Direct`，因此不存在自动测速导致的出口 IP 跳变。没有真实节点时，`🔒 Fixed Exit` 退化为 `['DIRECT']`。`ai` 默认同时开启 TUN 与 IPv6。
 
-产物输出到 `dist/`：
+### 规则
 
-```
-dist/
-+-- ai.min.js           # 固定出口方案 (~31 KB / ~10 KB gzip)
-+-- default.min.js      # 默认方案 (~30 KB / ~9.5 KB gzip)
-+-- full.min.js         # 完整方案 (~31 KB / ~10 KB gzip)
-+-- lite.min.js         # 轻量方案 (~28 KB / ~9 KB gzip)
-```
+| 类别 | 规则 | 目标 |
+|---|---|---|
+| 基础 | `GEOSITE(private)`、`RULE-SET(private_IP)`、`RULE-SET(Custom_*)`、`RULE-SET(giveup_*)` | `Direct`，`giveup_proxy` / `Custom_Proxy` 走代理 |
+| 流媒体 | `GEOSITE(youtube/netflix/disney/hbo/spotify/...)` | 对应流媒体组 |
+| AI | `GEOSITE(openai/google-gemini/category-ai-!cn)` | `AI Services` |
+| 社交 | `GEOSITE(category-communication/social-media/github/...)` | 对应服务组 |
+| 游戏 | `GEOSITE(steam/category-games)` | `Gaming` / `Steam` |
+| 特殊 | `GEOSITE(paypal)` | `PayPal` |
+| 兜底 | `GEOSITE(cn)`、`RULE-SET(cn-ip)`、`MATCH` | `Direct` / `Final`（`ai` 为内置 `DIRECT` / `Fixed Exit`） |
 
-### 使用
+`ai` 的规则顺序为：基础规则、AI 规则、Apple/Microsoft、国内直连、`MATCH`。AI 规则排在 Apple/Microsoft 之前，避免 AI 域名被后两者截获。
 
-将 `.min.js` 的内容复制粘贴到 Clash Verge Rev 等软件的 “全局扩展脚本” 中即可。
+## 配置与日志
 
-### 运行时日志
+每个预设的静态配置在 `src/features/<preset>.js`：地区列表、代理组开关、规则开关、`tun`、`sniffer`、`ntp`、`DNS_STRICT`、`LOGGING_ENABLED`、`LOGGING_LEVEL`。关闭 `tun`、`sniffer` 或 `ntp` 时，会删除输入订阅中的同名字段。
 
-脚本内置 BOA-safe 单行日志系统，不依赖 Node.js、浏览器网络 API 或文件 API。默认策略：
+日志默认策略：
 
 | Preset | Enabled | Level |
 |---|:---:|---|
@@ -347,56 +193,32 @@ dist/
 | `full` | yes | `info` |
 | `ai` | yes | `info` |
 
-日志等级从低到高为 `trace`、`debug`、`info`、`warn`、`error`，`silent` 和 `off` 会关闭输出。格式为：
+等级为 `trace`、`debug`、`info`、`warn`、`error`，`silent` 和 `off` 关闭输出。格式示例：
 
 ```text
 2026-01-02T03:04:05.006Z WARN clash-script-adapter.preset.default empty-proxies-fallback platform=linux proxyCount=0
 ```
 
-如需调整日志行为，修改对应 `src/features/*.js` 顶部的静态开关：
+日志只记录平台、数量和功能摘要，不输出节点名、`secret` 或完整配置。
 
-```js
-export const LOGGING_ENABLED = true;
-export const LOGGING_LEVEL = 'info';
+## 仓库结构
+
+```text
+src/
++-- presets/      入口：组合模块与 features
++-- features/     编译开关：地区、代理组、规则、DNS、日志
++-- modules/      可复用构建器：平台、清洗、地区、代理组、规则、DNS、网络、日志
+test/             与模块和预设对应的测试
+dist/             构建产物（gitignored）
+build.js          features 常量替换 + esbuild bundle + Terser minify
 ```
-
-日志只记录平台、数量和功能摘要等排障信息，不输出节点名称、`secret` 或完整配置对象。
-
----
-
-## 依赖关系
-
-```
-  preset (default/full/lite/ai)
-    |
-    +-- features --- 编译开关（ai 额外含 stableEgress）
-    |
-    +-- platform --- 平台检测
-    |
-    +-- proxy-cleaner - config.proxies 清洗
-    |
-    +-- regions ---- 16 地区正则
-    |
-    +-- proxy-groups - GROUP const ---+
-    |       ^                        |
-    |       +-------- rules ---------+  (共享组名常量)
-    |
-    +-- dns
-    |
-    +-- global-settings
-    |
-    +-- network ---- TUN + Sniffer
-```
-
----
 
 ## 参考项目
 
-- [Aethersailor/Custom_OpenClash_Rules](https://github.com/Aethersailor/Custom_OpenClash_Rules) -- 规则集来源
-- [mihomo wiki](https://wiki.metacubex.one/) -- 官方配置文档
-- [Clash Verge Rev](https://github.com/clash-verge-rev/clash-verge-rev) -- 客户端
+- [Aethersailor/Custom_OpenClash_Rules](https://github.com/Aethersailor/Custom_OpenClash_Rules) - 规则集来源
+- [mihomo wiki](https://wiki.metacubex.one/) - 官方配置文档
+- [Clash Verge Rev](https://github.com/clash-verge-rev/clash-verge-rev) - 客户端
 
----
+## 许可证
 
-**Made with care for the Clash community**
-
+MIT，见 [LICENSE](LICENSE)。

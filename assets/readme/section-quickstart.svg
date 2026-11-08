@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="160" viewBox="0 0 1200 160" role="img" aria-labelledby="quickstart-title quickstart-desc">
+  <title id="quickstart-title">Quick start</title>
+  <desc id="quickstart-desc">Download one preset and paste it into the Clash Verge Rev global extend script.</desc>
+
+  <rect width="1200" height="160" fill="#0b0f14"/>
+  <text x="56" y="104" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="64" font-weight="700" fill="#7aa2f7">01</text>
+  <g font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif">
+    <text x="140" y="96" font-size="58" font-weight="700" fill="#f2f5f7">下载、粘贴、应用</text>
+    <text x="140" y="132" font-size="20" fill="#8b98a5">Download one preset, paste it into Clash Verge Rev.</text>
+  </g>
+  <g stroke="#26303a" stroke-width="1" fill="none">
+    <path d="M 900 80 H 1144"/>
+    <circle cx="940" cy="80" r="4" fill="#7aa2f7" stroke="none"/>
+    <circle cx="1030" cy="80" r="4" fill="#e0af68" stroke="none"/>
+    <circle cx="1120" cy="80" r="4" fill="#7aa2f7" stroke="none"/>
+  </g>
+</svg>
