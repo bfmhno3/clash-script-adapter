@@ -1,11 +1,98 @@
 const fs = require('fs');
 const path = require('path');
+const { pathToFileURL } = require('url');
 const esbuild = require('esbuild');
 const { minify } = require('terser');
+
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function featurePathPattern(featurePath) {
+  return featurePath
+    .split('.')
+    .map(part => escapeRegExp(part))
+    .join('\\s*\\??\\.\\s*');
+}
+
+/**
+ * Collect literal replacements for the selected preset's features.
+ * Parents are only emitted where the code reads the whole object
+ * (logging and regions); boolean leaves are emitted individually so
+ * Terser can fold `if (false)` and drop the unused branch.
+ */
+function collectFeatureReplacements(features) {
+  const replacements = [];
+
+  function walk(value, featurePath) {
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      if (featurePath === 'features.logging' || featurePath === 'features.regions') {
+        replacements.push([featurePath, JSON.stringify(value)]);
+      }
+      for (const key of Object.keys(value)) {
+        walk(value[key], featurePath + '.' + key);
+      }
+      return;
+    }
+
+    replacements.push([featurePath, JSON.stringify(value)]);
+  }
+
+  walk(features, 'features');
+
+  // These switches only exist in the ai preset. Treat an absent switch as false
+  // so the stable-egress branch is folded out of the other three builds.
+  for (const optionalPath of ['features.rules.stableEgress', 'features.proxyGroups.stableEgress']) {
+    const value = optionalPath
+      .split('.')
+      .slice(1)
+      .reduce((current, key) => (current ? current[key] : undefined), features);
+
+    if (value === undefined) {
+      replacements.push([optionalPath, 'false']);
+    }
+  }
+
+  replacements.sort((a, b) => b[0].length - a[0].length);
+
+  return replacements.map(([featurePath, literal]) => [
+    new RegExp(featurePathPattern(featurePath) + '(?![\\w$])', 'g'),
+    literal,
+  ]);
+}
+
+/**
+ * Replace feature object reads with preset literals before bundling.
+ * The source keeps using a features object so tests can toggle flags;
+ * the release build gets scalar conditions that Terser can eliminate.
+ */
+function createFeaturePlugin(features, srcRoot) {
+  const replacements = collectFeatureReplacements(features);
+
+  return {
+    name: 'preset-feature-constants',
+    setup(build) {
+      build.onLoad({ filter: /\.js$/ }, async args => {
+        const relativePath = path.relative(srcRoot, args.path);
+        if (relativePath.startsWith('..') || path.isAbsolute(relativePath)) {
+          return null;
+        }
+
+        let contents = await fs.promises.readFile(args.path, 'utf8');
+        for (const [pattern, literal] of replacements) {
+          contents = contents.replace(pattern, () => literal);
+        }
+
+        return { contents, loader: 'js' };
+      });
+    },
+  };
+}
 
 async function build() {
   const srcDir = './src/presets';
   const distDir = './dist';
+  const srcRoot = path.resolve('src');
 
   if (!fs.existsSync(srcDir)) {
     console.error(`错误: 源代码目录 ${srcDir} 不存在。`);
@@ -49,13 +136,17 @@ async function build() {
     const minifiedFileName = `${baseName}.min.js`;
 
     try {
+      const featuresPath = path.join(srcDir, '..', 'features', `${baseName}.js`);
+      const { features } = await import(pathToFileURL(path.resolve(featuresPath)).href);
+
       // 1. 使用 esbuild 将依赖打包（类似于 C 语言的 include 和链接）
       const bundleResult = await esbuild.build({
         entryPoints: [filePath],
         bundle: true,
         format: 'esm', // 输出 ES Module 格式
         target: 'es2020',
-        write: false
+        write: false,
+        plugins: [createFeaturePlugin(features, srcRoot)],
       });
 
       // 提取打包后的原代码
