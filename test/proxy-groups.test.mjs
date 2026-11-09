@@ -365,12 +365,12 @@ describe('buildProxyGroups stable egress', () => {
     assert.deepEqual(stable.proxies, ['US01', 'SG01', 'JP01', 'HK01', 'OTHER01']);
   });
 
-  it('puts DIRECT first in Apple and Microsoft groups', () => {
+  it('puts DIRECT then Fixed Exit first in Apple and Microsoft groups', () => {
     const groups = buildProxyGroups({
       hk: ['HK01'],
       us: ['US01'],
     }, ['US01', 'HK01'], STABLE_FEATURES);
-    const expected = ['DIRECT', 'US01', 'HK01'];
+    const expected = ['DIRECT', GROUP.STABLE, 'US01', 'HK01'];
 
     assert.deepEqual(groups.find(group => group.name === GROUP.APPLE).proxies, expected);
     assert.deepEqual(groups.find(group => group.name === GROUP.MICROSOFT).proxies, expected);
@@ -383,7 +383,13 @@ describe('buildProxyGroups stable egress', () => {
     }, ['DIRECT'], STABLE_FEATURES);
 
     assert.deepEqual(groups.find(group => group.name === GROUP.STABLE).proxies, ['DIRECT']);
-    assert.deepEqual(groups.find(group => group.name === GROUP.APPLE).proxies, ['DIRECT']);
-    assert.deepEqual(groups.find(group => group.name === GROUP.MICROSOFT).proxies, ['DIRECT']);
+    assert.deepEqual(groups.find(group => group.name === GROUP.APPLE).proxies, [
+      'DIRECT',
+      GROUP.STABLE,
+    ]);
+    assert.deepEqual(groups.find(group => group.name === GROUP.MICROSOFT).proxies, [
+      'DIRECT',
+      GROUP.STABLE,
+    ]);
   });
 });

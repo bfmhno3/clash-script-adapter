@@ -197,7 +197,9 @@ function buildStableProxyGroups(regions, safeProxies, logger = null) {
     ...safeProxies,
   ]).filter(proxy => proxy && proxy !== 'DIRECT');
   const fixedProxies = exitProxies.length > 0 ? exitProxies : ['DIRECT'];
-  const vendorProxies = dedupeProxies(['DIRECT', ...fixedProxies]);
+  // Vendor groups default to DIRECT, then delegate to the Fixed Exit group
+  // so the whole exit selection can be switched in one place.
+  const vendorProxies = dedupeProxies(['DIRECT', GROUP.STABLE, ...fixedProxies]);
 
   const groups = [
     {

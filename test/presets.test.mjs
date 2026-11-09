@@ -233,9 +233,9 @@ describe('preset/ai', () => {
     assert.ok(!stable.proxies.includes(GROUP.MANUAL));
   });
 
-  it('defaults Apple and Microsoft to DIRECT with node overrides', () => {
+  it('defaults Apple and Microsoft to DIRECT then Fixed Exit with node overrides', () => {
     const config = aiMain(mockConfig(['🇭🇰 HK01', '🇺🇸 US01']), 'windows');
-    const expected = ['DIRECT', '🇺🇸 US01', '🇭🇰 HK01'];
+    const expected = ['DIRECT', GROUP.STABLE, '🇺🇸 US01', '🇭🇰 HK01'];
 
     assert.deepEqual(
       config['proxy-groups'].find(group => group.name === GROUP.APPLE).proxies,
